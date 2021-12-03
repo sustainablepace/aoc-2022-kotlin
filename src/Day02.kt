@@ -1,3 +1,5 @@
+import Direction.*
+
 typealias PlannedCourse = List<Command>
 
 fun List<String>.plannedCourse(): PlannedCourse = map { Command.create(it) }
@@ -12,9 +14,9 @@ data class Command(
         fun create(command: String): Command = command.split(' ').let { params ->
             assert(params.size == 2)
             val direction = when(params[0]) {
-                "forward" -> Direction.FORWARD
-                "down" -> Direction.DOWN
-                "up" -> Direction.UP
+                "forward" -> FORWARD
+                "down" -> DOWN
+                "up" -> UP
                 else -> throw java.lang.IllegalArgumentException("Invalid direction ${params[0]}")
             }
             Command(direction, params[1].toInt())
@@ -31,9 +33,9 @@ data class Position(
     val depth: Int = 0
 ) {
     fun follow(command: Command): Position = when (command.direction) {
-        Direction.FORWARD -> Position(horizontalPosition + command.x, depth)
-        Direction.UP -> Position(horizontalPosition, depth - command.x)
-        Direction.DOWN -> Position(horizontalPosition, depth + command.x)
+        FORWARD -> Position(horizontalPosition + command.x, depth)
+        UP -> Position(horizontalPosition, depth - command.x)
+        DOWN -> Position(horizontalPosition, depth + command.x)
     }
     fun result(): Int = horizontalPosition * depth
 }
@@ -44,9 +46,9 @@ data class CorrectPosition(
     val aim: Int = 0
 ) {
     fun follow(command: Command): CorrectPosition = when (command.direction) {
-        Direction.FORWARD -> CorrectPosition(horizontalPosition + command.x, depth + aim * command.x, aim)
-        Direction.UP -> CorrectPosition(horizontalPosition, depth, aim - command.x)
-        Direction.DOWN -> CorrectPosition(horizontalPosition, depth, aim + command.x)
+        FORWARD -> CorrectPosition(horizontalPosition + command.x, depth + aim * command.x, aim)
+        UP -> CorrectPosition(horizontalPosition, depth, aim - command.x)
+        DOWN -> CorrectPosition(horizontalPosition, depth, aim + command.x)
     }
     fun result(): Int = horizontalPosition * depth
 }
