@@ -55,18 +55,22 @@ class BingoSubsystem(input: List<String>) {
         }
     }
 
-    fun check(numNumbersDrawn: Int): Bingo? {
-        val drawnNumbers = numbers.subList(0, numNumbersDrawn)
-        boards.forEach { board ->
-            board.check(drawnNumbers)?.let {
-                return it
+    fun check(): Bingo? {
+        (5 until numbers.size).forEach { numNumbersDrawn ->
+            val drawnNumbers = numbers.subList(0, numNumbersDrawn)
+            boards.forEach { board ->
+                board.check(drawnNumbers)?.let {
+                    return it
+                }
             }
         }
         return null
+
     }
 
     fun checkLast(): Bingo? {
         val unfinishedBoards = boards.indices.toMutableSet()
+
         (5 until numbers.size).forEach { numNumbersDrawn ->
             val drawnNumbers = numbers.subList(0, numNumbersDrawn)
 
@@ -81,30 +85,14 @@ class BingoSubsystem(input: List<String>) {
                 }
             }
         }
-
         return null
     }
 }
 
 fun main() {
-    fun part1(input: List<String>): Int {
-        val bingo = BingoSubsystem(input)
-        (5 until bingo.numbers.size).forEach { index ->
-            bingo.check(index)?.let {
-                return it.score
-            }
-        }
-        throw IllegalArgumentException("No bingo")
-    }
+    fun part1(input: List<String>): Int? = BingoSubsystem(input).check()?.score
 
-    fun part2(input: List<String>): Int {
-        val bingo = BingoSubsystem(input)
-        bingo.checkLast()?.let {
-            return it.score
-        }
-        throw IllegalArgumentException("No bingo")
-
-    }
+    fun part2(input: List<String>): Int? = BingoSubsystem(input).checkLast()?.score
 
     // test if implementation meets criteria from the description, like:
     val testInput = readInput("Day04_test")
