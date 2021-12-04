@@ -1,61 +1,52 @@
-typealias RandomNumbers = List<Int>
-typealias Boards = List<Board>
+typealias DrawnNumbers = List<Int>
+
+@JvmInline
+value class Bingo(val score: Int)
 
 @JvmInline
 value class Board(val rows: List<List<Int>>) {
     init {
         assert(rows.size == 5)
-        assert(rows.all { it.size == 5})
+        assert(rows.all { it.size == 5 })
     }
 
-    private fun unmarkedNumbers(drawnNumbers: RandomNumbers): Set<Int> {
-        return rows.flatMap { it }.toSet().minus(drawnNumbers)
-    }
+    private val allNumbers: Set<Int>
+        get() = rows.flatMap { it }.toSet()
 
-    private fun checkRows(drawnNumbers: RandomNumbers): Bingo? {
-        rows.forEach { row ->
-            if (drawnNumbers.containsAll(row)) {
-                return Bingo(unmarkedNumbers(drawnNumbers).sum() * drawnNumbers.last())
-            }
+    private val columns: List<List<Int>>
+        get() = (0 until 5).map { column ->
+            rows.map { row -> row[column] }
         }
-        return null
-    }
 
-    private fun checkColumns(drawnNumbers: RandomNumbers): Bingo? {
-        (0 until 5).forEach { column ->
-            if (drawnNumbers.containsAll(rows.map { it[column] })) {
-                return Bingo(unmarkedNumbers(drawnNumbers).sum() * drawnNumbers.last())
-            }
-        }
-        return null
-    }
+    private fun score(drawnNumbers: DrawnNumbers): Int =
+        allNumbers.minus(drawnNumbers).sum() * drawnNumbers.last()
 
-    fun check(drawnNumbers: RandomNumbers): Bingo? {
-        checkRows(drawnNumbers)?.let {
-            return it
+    private fun checkRows(drawnNumbers: DrawnNumbers): Bingo? =
+        rows.find { row -> drawnNumbers.containsAll(row) }?.let {
+            Bingo(score(drawnNumbers))
         }
-        checkColumns(drawnNumbers)?.let {
-            return it
+
+    private fun checkColumns(drawnNumbers: DrawnNumbers): Bingo? =
+        columns.find { column -> drawnNumbers.containsAll(column) }?.let {
+            Bingo(score(drawnNumbers))
         }
-        return null
-    }
+
+    fun check(drawnNumbers: DrawnNumbers): Bingo? =
+        checkRows(drawnNumbers) ?: checkColumns(drawnNumbers)
 }
 
 
-@JvmInline
-value class Bingo(val score: Int)
-
 class BingoSubsystem(input: List<String>) {
-    val numbers: RandomNumbers
-    val boards: Boards
+    val numbers: DrawnNumbers
+    private val boards: List<Board>
 
     init {
         input.filter {
             it.trim() != ""
-        }.let {
-            numbers = it.first().split(",").map { it.toInt() }
-            boards = it.subList(1, it.size).chunked(5).map { fiveByFive ->
-                fiveByFive.map { row ->
+        }.let { filteredInput ->
+            numbers = filteredInput.first().split(",").map { it.toInt() }
+            boards = filteredInput.subList(1, filteredInput.size).chunked(5).map { rows ->
+                rows.map { row ->
                     row.trim().replace("\\s+".toRegex(), ",").split(",").map { it.toInt() }
                 }.let {
                     Board(it)
