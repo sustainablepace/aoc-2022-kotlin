@@ -4,14 +4,14 @@ typealias DrawnNumbers = List<Int>
 value class Bingo(val score: Int)
 
 @JvmInline
-value class Board(val rows: List<List<Int>>) {
+value class Board(private val rows: List<List<Int>>) {
     init {
         assert(rows.size == 5)
         assert(rows.all { it.size == 5 })
     }
 
     private val allNumbers: Set<Int>
-        get() = rows.flatMap { it }.toSet()
+        get() = rows.flatten().toSet()
 
     private val columns: List<List<Int>>
         get() = (0 until 5).map { column ->
@@ -37,7 +37,7 @@ value class Board(val rows: List<List<Int>>) {
 
 
 class BingoSubsystem(input: List<String>) {
-    val numbers: DrawnNumbers
+    private val numbers: DrawnNumbers
     private val boards: List<Board>
 
     init {
@@ -65,7 +65,6 @@ class BingoSubsystem(input: List<String>) {
             }
         }
         return null
-
     }
 
     fun checkLast(): Bingo? {
