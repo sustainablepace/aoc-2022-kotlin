@@ -3,16 +3,15 @@ import kotlin.math.max
 
 data class LineSegment(val p1: Vector, val p2: Vector) {
 
+    private val vector: Vector
+        get() = p2 - p1
+
     val isDiagonal: Boolean
-        get() = (p2 - p1).isDiagonal
+        get() = vector.isDiagonal
 
     fun pointsInLineSegment(): List<Vector> =
-        (p2 - p1).let { vec ->
-            vec.normalize().let { vecNormalized ->
-                (0..vec.length).map { factor ->
-                    p1 + vecNormalized * factor
-                }
-            }
+        (0..vector.length).map { factor ->
+            p1 + vector.normalized * factor
         }
 
     companion object {
@@ -20,8 +19,12 @@ data class LineSegment(val p1: Vector, val p2: Vector) {
             input.map { line ->
                 line.split(" -> ")
                     .map { points ->
-                        points.split(",").let { (x, y) -> Vector(x.toInt(), y.toInt()) }
-                    }.let { (p1, p2) -> LineSegment(p1, p2) }
+                        points.split(",").let { (x, y) ->
+                            Vector(x.toInt(), y.toInt())
+                        }
+                    }.let { (p1, p2) ->
+                        LineSegment(p1, p2)
+                    }
             }
     }
 }
@@ -31,10 +34,10 @@ data class Vector(val x: Int, val y: Int) {
         get() = max(abs(x), abs(y))
 
     val isDiagonal: Boolean
-        get() = normalize().let { it.x != 0 && it.y != 0 }
+        get() = normalized.let { it.x != 0 && it.y != 0 }
 
-    fun normalize() =
-        if (length == 0) Vector(0, 0) else Vector(x / length, y / length)
+    val normalized: Vector
+        get() = if (length == 0) Vector(0, 0) else Vector(x / length, y / length)
 
     operator fun minus(p: Vector): Vector = Vector(x - p.x, y - p.y)
 
