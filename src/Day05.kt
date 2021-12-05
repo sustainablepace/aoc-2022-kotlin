@@ -3,6 +3,17 @@ import kotlin.math.max
 
 typealias Point = Vector
 
+data class Vector(val x: Int, val y: Int) {
+
+    val length: Int = max(abs(x), abs(y))
+    val normalized: Vector
+        get() = if (length == 0) Vector(0, 0) else Vector(x / length, y / length)
+
+    operator fun minus(v: Vector): Vector = Vector(x - v.x, y - v.y)
+    operator fun plus(v: Vector): Vector = Vector(x + v.x, y + v.y)
+    operator fun times(factor: Int) = Vector(factor * x, factor * y)
+}
+
 data class LineSegment(val p1: Point, val p2: Point) {
 
     private val vector: Vector = p2 - p1
@@ -17,24 +28,13 @@ data class LineSegment(val p1: Point, val p2: Point) {
                 line.split(" -> ")
                     .map { points ->
                         points.split(",").let { (x, y) ->
-                            Vector(x.toInt(), y.toInt())
+                            Point(x.toInt(), y.toInt())
                         }
                     }.let { (p1, p2) ->
                         LineSegment(p1, p2)
                     }
             }
     }
-}
-
-data class Vector(val x: Int, val y: Int) {
-
-    val length: Int = max(abs(x), abs(y))
-    val normalized: Vector
-        get() = if (length == 0) Vector(0, 0) else Vector(x / length, y / length)
-
-    operator fun minus(v: Vector): Vector = Vector(x - v.x, y - v.y)
-    operator fun plus(v: Vector): Vector = Vector(x + v.x, y + v.y)
-    operator fun times(factor: Int) = Vector(factor * x, factor * y)
 }
 
 fun main() {
