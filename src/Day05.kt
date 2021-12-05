@@ -1,77 +1,62 @@
-data class Line(val start: Point, val end: Point) {
-    fun pointsInLineOnlyHorizontal(): List<Point> {
-        return if(start.x == end.x) {
-            (Math.min(start.y, end.y)..Math.max(start.y, end.y)).map { y ->
-                Point(start.x, y)
-            }
-        } else if(start.y == end.y) {
-            (Math.min(start.x, end.x)..Math.max(start.x, end.x)).map { x ->
-                Point(x, start.y)
-            }
-        } else emptyList()
-    }
-    fun pointsInLine(): List<Point> {
-        return if(start.x == end.x) {
-            (Math.min(start.y, end.y)..Math.max(start.y, end.y)).map { y ->
-                Point(start.x, y)
-            }
-        } else if(start.y == end.y) {
-            (Math.min(start.x, end.x)..Math.max(start.x, end.x)).map { x ->
-                Point(x, start.y)
-            }
-        } else {
-            assert(start.x != end.x)
-            assert(start.y != end.y)
-            if(start.x < end.x && start.y < end.y) {
-                (0..end.x-start.x).map { d ->
-                    Point(start.x+d, start.y+d)
+import kotlin.math.abs
+import kotlin.math.max
+
+data class LineSegment(val p1: Vector, val p2: Vector) {
+
+    val isDiagonal: Boolean
+        get() = (p2 - p1).isDiagonal
+
+    fun pointsInLine(): List<Vector> =
+        (p2 - p1).let { vec ->
+            vec.normalize().let { vecNormalized ->
+                (0..vec.length).map { factor ->
+                    p1 + vecNormalized * factor
                 }
             }
-            else if(start.x < end.x && start.y > end.y) {
-                (0..end.x-start.x).map { d ->
-                    Point(start.x+d, start.y-d)
-                }
-            }
-            else if(start.x > end.x && start.y > end.y) {
-                (0..start.x-end.x).map { d ->
-                    Point(start.x-d, start.y-d)
-                }
-            }
-            else if(start.x > end.x && start.y < end.y) {
-                (0..start.x-end.x).map { d ->
-                    Point(start.x-d, start.y+d)
-                }
-            } else throw IllegalArgumentException("should not happen")
         }
+
+    companion object {
+        fun parse(input: List<String>): List<LineSegment> =
+            input.map { line ->
+                line.split(" -> ")
+                    .map { points ->
+                        points.split(",").let { (x, y) -> Vector(x.toInt(), y.toInt()) }
+                    }.let { (p1, p2) -> LineSegment(p1, p2) }
+            }
     }
 }
 
-data class Point(val x: Int, val y: Int)
-fun parse(input: List<String>): List<Line> {
-    val pointList = input.map { it.split("->") }
-    return pointList.map { points ->
-        assert(points.size == 2)
-        val p1 = points[0].trim().split(",").map { it.toInt() }
-        assert(p1.size == 2)
-        val p2 = points[1].trim().split(",").map { it.toInt() }
-        assert(p2.size == 2)
-        Line(Point(p1[0], p1[1]), Point(p2[0], p2[1]))
-    }
+data class Vector(val x: Int, val y: Int) {
+    val length: Int
+        get() = max(abs(x), abs(y))
+
+    val isDiagonal: Boolean
+        get() = normalize().let { it.x != 0 && it.y != 0 }
+
+    fun normalize() =
+        if (length == 0) Vector(0, 0) else Vector(x / length, y / length)
+
+    operator fun minus(p: Vector): Vector = Vector(x - p.x, y - p.y)
+
+    operator fun plus(p: Vector): Vector = Vector(x + p.x, y + p.y)
+
+    operator fun times(factor: Int) = Vector(factor * x, factor * y)
 }
+
+
 fun main() {
-    fun part1(input: List<String>): Int {
-        val lines = parse(input)
-        val points = lines.flatMap { line -> line.pointsInLineOnlyHorizontal() }.groupBy { it }.count { it.value.size > 1 }
-        return points
-    }
+    fun part1(input: List<String>): Int =
+        LineSegment.parse(input).filter {
+            !it.isDiagonal
+        }.flatMap { line ->
+            line.pointsInLine()
+        }.groupBy { it }.count { it.value.size > 1 }
 
-    fun part2(input: List<String>): Int {
-        val lines = parse(input)
-        val points = lines.flatMap { line -> line.pointsInLine() }.groupBy { it }.count { it.value.size > 1 }
-        return points
-    }
+    fun part2(input: List<String>): Int =
+        LineSegment.parse(input).flatMap { line ->
+            line.pointsInLine()
+        }.groupBy { it }.count { it.value.size > 1 }
 
-    // test if implementation meets criteria from the description, like:
     val testInput = readInput("Day05_test")
     println(part1(testInput))
     check(part1(testInput) == 5)
