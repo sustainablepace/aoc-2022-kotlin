@@ -49,10 +49,10 @@ fun main() {
         }.groupBy { it }.count { it.value.size > 1 }
 
     val testInput = readInput("Day05_test")
+    val input = readInput("Day05")
+
     println(part1(testInput))
     check(part1(testInput) == 5)
-
-    val input = readInput("Day05")
     println(part1(input))
 
     println(part2(testInput))
