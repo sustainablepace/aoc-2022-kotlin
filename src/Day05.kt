@@ -9,7 +9,7 @@ data class LineSegment(val p1: Point, val p2: Point) {
 
     val isDiagonal: Boolean = vector.normalized.let { v -> v.x != 0 && v.y != 0 }
 
-    fun pointsInLineSegment(): List<Vector> = (0..vector.length).map { length -> p1 + vector.normalized * length }
+    fun pointsInLineSegment() = (0..vector.length).map { length -> p1 + vector.normalized * length }
 
     companion object {
         fun parse(input: List<String>): List<LineSegment> =
