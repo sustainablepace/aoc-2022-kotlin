@@ -2,7 +2,8 @@ import kotlin.math.abs
 import kotlin.math.max
 
 data class LineSegment(val p1: Vector, val p2: Vector) {
-    val vector: Vector = p2 - p1
+    private val vector: Vector = p2 - p1
+    val isDiagonal: Boolean = vector.normalized.let { it.x != 0 && it.y != 0 }
 
     fun pointsInLineSegment(): List<Vector> =
         (0..vector.length).map { factor ->
@@ -26,25 +27,18 @@ data class LineSegment(val p1: Vector, val p2: Vector) {
 
 data class Vector(val x: Int, val y: Int) {
     val length: Int = max(abs(x), abs(y))
-
-    val isDiagonal: Boolean
-        get() = normalized.let { it.x != 0 && it.y != 0 }
-
     val normalized: Vector
         get() = if (length == 0) Vector(0, 0) else Vector(x / length, y / length)
 
     operator fun minus(p: Vector): Vector = Vector(x - p.x, y - p.y)
-
     operator fun plus(p: Vector): Vector = Vector(x + p.x, y + p.y)
-
     operator fun times(factor: Int) = Vector(factor * x, factor * y)
 }
-
 
 fun main() {
     fun part1(input: List<String>): Int =
         LineSegment.parse(input).filter {
-            !it.vector.isDiagonal
+            !it.isDiagonal
         }.flatMap { line ->
             line.pointsInLineSegment()
         }.groupBy { it }.count { it.value.size > 1 }
