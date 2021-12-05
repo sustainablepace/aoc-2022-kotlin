@@ -5,20 +5,20 @@ typealias Point = Vector
 
 data class Vector(val x: Int, val y: Int) {
 
-    val length: Int = max(abs(x), abs(y))
+    val length = max(abs(x), abs(y))
     val normalized: Vector
         get() = if (length == 0) Vector(0, 0) else Vector(x / length, y / length)
 
-    operator fun minus(v: Vector): Vector = Vector(x - v.x, y - v.y)
-    operator fun plus(v: Vector): Vector = Vector(x + v.x, y + v.y)
+    operator fun minus(v: Vector) = Vector(x - v.x, y - v.y)
+    operator fun plus(v: Vector) = Vector(x + v.x, y + v.y)
     operator fun times(factor: Int) = Vector(factor * x, factor * y)
 }
 
 data class LineSegment(val p1: Point, val p2: Point) {
 
-    private val vector: Vector = p2 - p1
+    private val vector = p2 - p1
 
-    val isDiagonal: Boolean = vector.normalized.let { v -> v.x != 0 && v.y != 0 }
+    val isDiagonal = vector.normalized.let { v -> v.x != 0 && v.y != 0 }
 
     fun pointsInLineSegment() = (0..vector.length).map { length -> p1 + vector.normalized * length }
 
