@@ -56,8 +56,10 @@ fun main() {
     println(part1(testInput))
     check(part1(testInput) == 5)
     println(part1(input))
+    check(part1(input) == 4728)
 
     println(part2(testInput))
     check(part2(testInput) == 12)
     println(part2(input))
+    check(part2(input) == 17717)
 }
