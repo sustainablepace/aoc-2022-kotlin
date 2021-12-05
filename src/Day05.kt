@@ -6,7 +6,7 @@ data class LineSegment(val p1: Vector, val p2: Vector) {
     val isDiagonal: Boolean
         get() = (p2 - p1).isDiagonal
 
-    fun pointsInLine(): List<Vector> =
+    fun pointsInLineSegment(): List<Vector> =
         (p2 - p1).let { vec ->
             vec.normalize().let { vecNormalized ->
                 (0..vec.length).map { factor ->
@@ -49,12 +49,12 @@ fun main() {
         LineSegment.parse(input).filter {
             !it.isDiagonal
         }.flatMap { line ->
-            line.pointsInLine()
+            line.pointsInLineSegment()
         }.groupBy { it }.count { it.value.size > 1 }
 
     fun part2(input: List<String>): Int =
         LineSegment.parse(input).flatMap { line ->
-            line.pointsInLine()
+            line.pointsInLineSegment()
         }.groupBy { it }.count { it.value.size > 1 }
 
     val testInput = readInput("Day05_test")
