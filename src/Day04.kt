@@ -5,11 +5,6 @@ value class Bingo(val score: Int)
 
 @JvmInline
 value class Board(private val rows: List<List<Int>>) {
-    init {
-        assert(rows.size == 5)
-        assert(rows.all { it.size == 5 })
-    }
-
     private val allNumbers: Set<Int>
         get() = rows.flatten().toSet()
 

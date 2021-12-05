@@ -14,7 +14,7 @@ data class Vector(val x: Int, val y: Int) {
     operator fun times(factor: Int) = Vector(factor * x, factor * y)
 }
 
-data class LineSegment(val p1: Point, val p2: Point) {
+class LineSegment(private val p1: Point, p2: Point) {
 
     private val vector = p2 - p1
 
