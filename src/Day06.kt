@@ -13,26 +13,24 @@ fun main() {
     }
 
     fun part2(input: List<String>): Long  {
-        var fishes = arrayOf<Long>(0, 0, 0, 0, 0, 0, 0, 0, 0)
+        val swarm = arrayOf<Long>(0, 0, 0, 0, 0, 0, 0, 0, 0)
 
-        val fish = input.first().split(",").map { it.toInt() }
-        fish.forEach {
-           fishes[it]++
+        input.first().split(",").map { it.toInt() }.forEach { daysUntilRespawn ->
+           swarm[daysUntilRespawn]++
         }
-        repeat(256) { day ->
-            val new8 = fishes[0]
-            val new6 = fishes[0]
-            fishes[0] = fishes[1]
-            fishes[1] = fishes[2]
-            fishes[2] = fishes[3]
-            fishes[3] = fishes[4]
-            fishes[4] = fishes[5]
-            fishes[5] = fishes[6]
-            fishes[6] = fishes[7] + new6
-            fishes[7] = fishes[8]
-            fishes[8] = new8
+
+        repeat(256) {
+            val respawned = swarm[0]
+            (0..8).forEach { daysUntilRespawn ->
+                swarm[daysUntilRespawn] = when (daysUntilRespawn) {
+                    8 -> respawned
+                    6 -> swarm[7] + respawned
+                    else -> swarm[daysUntilRespawn+1]
+                }
+            }
         }
-        return fishes.sum()
+
+        return swarm.sum()
     }
 
     val testInput = readInput("Day06_test")
@@ -41,8 +39,10 @@ fun main() {
     println(part1(testInput))
     check(part1(testInput) == 5934)
     println(part1(input))
+    check(part1(input) == 346063)
 
     println(part2(testInput))
     check(part2(testInput) == 26984457539)
     println(part2(input))
+    check(part2(input) == 1572358335990)
 }
