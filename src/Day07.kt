@@ -4,20 +4,16 @@ import kotlin.math.abs
 
 fun main() {
     fun part1(input: List<String>): Int {
-        val horizontalPositions = input.first().split(",").map { it.toInt() }
-        val min = min(horizontalPositions)
-        val max = max(horizontalPositions)
-        return (min..max).map { pos ->
-            pos to horizontalPositions.sumOf { abs(it - pos) }
-        }.minByOrNull { it.second }?.second!!
+        val crabs = input.first().split(",").map { it.toInt() }
+        return min((min(crabs)..max(crabs)).map { pos ->
+            crabs.sumOf { abs(it - pos) }
+        })
     }
 
     fun part2(input: List<String>): Int {
-        val horizontalPositions = input.first().split(",").map { it.toInt() }
-        val min = min(horizontalPositions)
-        val max = max(horizontalPositions)
-        return min((min..max).map { currentPosition ->
-            horizontalPositions.sumOf { abs(it - currentPosition).let { n -> n * (n + 1) / 2 } }
+        val crabs = input.first().split(",").map { it.toInt() }
+        return min((min(crabs)..max(crabs)).map { pos ->
+            crabs.sumOf { abs(it - pos).let { n -> n * (n + 1) / 2 } }
         })
     }
 
