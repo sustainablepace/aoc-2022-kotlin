@@ -1,14 +1,16 @@
 fun main() {
     fun part1(input: List<String>): Int {
         var fish = input.first().split(",").map { it.toInt() }
-        repeat(80) { day ->
+
+        repeat(80) {
             fish = fish.flatMap { fish ->
-                when {
-                    fish == 0 -> listOf(6, 8)
+                when (fish) {
+                    0 -> listOf(6, 8)
                     else -> listOf(fish - 1)
                 }
             }
         }
+
         return fish.size
     }
 
