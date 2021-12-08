@@ -3,7 +3,7 @@ import kotlin.system.measureTimeMillis
 
 typealias Segment = Char
 typealias SignalPattern = Set<Segment>
-typealias Digit = Set<Segment>
+typealias EncodedDigit = Set<Segment>
 typealias SevenDigitDisplay = Map<Int, Set<Segment>>
 
 val sevenSegmentDisplay: SevenDigitDisplay = mapOf(
@@ -36,27 +36,25 @@ class Solution(private val signalPatterns: List<SignalPattern>) {
     private val segmentC = segmentsForOne - segmentF
     private val segmentD = segmentsForFour - segmentC - segmentB - segmentF
 
-    private fun decodeSegments(encodedDigit: Digit) = encodedDigit.map { segment ->
-        when (setOf(segment)) {
-            segmentA -> 'a'
-            segmentB -> 'b'
-            segmentC -> 'c'
-            segmentD -> 'd'
-            segmentE -> 'e'
-            segmentF -> 'f'
-            else -> 'g'
-        }
-    }.toSet()
-
-    fun decode(encodedDigit: Digit) =
-        decodeSegments(encodedDigit).let { segments ->
+    fun decode(encodedDigit: EncodedDigit) =
+        encodedDigit.map { segment ->
+            when (setOf(segment)) {
+                segmentA -> 'a'
+                segmentB -> 'b'
+                segmentC -> 'c'
+                segmentD -> 'd'
+                segmentE -> 'e'
+                segmentF -> 'f'
+                else -> 'g'
+            }
+        }.toSet().let { segments ->
             sevenSegmentDisplay.findDigit(segments)
         }
 }
 
 data class NoteEntry(
     val signalPatterns: List<SignalPattern>,
-    val outputValues: List<Digit>
+    val outputValues: List<EncodedDigit>
 ) {
     companion object {
         fun entries(input: List<String>): List<NoteEntry> = input.map {
