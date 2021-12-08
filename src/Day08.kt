@@ -33,24 +33,22 @@ class Solution(private val signalPatterns: List<SignalPattern>) {
     private val segmentC = segmentsForOne - segmentF
     private val segmentD = segmentsForFour - segmentC - segmentB - segmentF
 
-    private fun decodeDigit(encodedDigit: Output): Set<Char> =
-        encodedDigit.map { segment ->
-            when (setOf(segment)) {
-                segmentA -> 'a'
-                segmentB -> 'b'
-                segmentC -> 'c'
-                segmentD -> 'd'
-                segmentE -> 'e'
-                segmentF -> 'f'
-                else -> 'g'
-            }
-        }.toSet()
+    private fun decodeDigit(encodedDigit: Output) = encodedDigit.map { segment ->
+        when (setOf(segment)) {
+            segmentA -> 'a'
+            segmentB -> 'b'
+            segmentC -> 'c'
+            segmentD -> 'd'
+            segmentE -> 'e'
+            segmentF -> 'f'
+            else -> 'g'
+        }
+    }.toSet()
 
-    fun decode(outputValues: List<Output>) = outputValues.map { encodedDigit ->
+    fun decode(encodedDigit: Output) =
         sevenSegmentDisplay.entries.first { (_, segmentsForDigit) ->
             segmentsForDigit == decodeDigit(encodedDigit)
         }.key
-    }
 }
 
 data class NoteEntry(
@@ -78,8 +76,10 @@ fun main() {
     fun part2(input: List<String>) =
         entries(input).sumOf { (signalPatterns, outputValues) ->
             with(Solution(signalPatterns)) {
-                decode(outputValues)
-            }.joinToString("").toInt()
+                outputValues.map {
+                    decode(it)
+                }.joinToString("").toInt()
+            }
         }
 
     val testInput = readInput("Day08_test")
