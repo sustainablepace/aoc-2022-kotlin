@@ -21,6 +21,7 @@ val sevenSegmentDisplay: SevenSegmentDisplay = mapOf(
 
 fun SevenSegmentDisplay.findDigit(segments: Set<Segment>) = entries.first { it.value == segments }.key
 
+
 class Solution(private val signalPatterns: List<SignalPattern>) {
 
     private val segmentsForOne = signalPatterns.first { it.size == sevenSegmentDisplay[1]!!.size }
