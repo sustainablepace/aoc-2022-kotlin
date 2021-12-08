@@ -3,9 +3,10 @@ import kotlin.system.measureTimeMillis
 
 typealias Segment = Char
 typealias SignalPattern = Set<Segment>
-typealias Output = Set<Segment>
+typealias Digit = Set<Segment>
+typealias SevenDigitDisplay = Map<Int, Set<Segment>>
 
-val sevenSegmentDisplay: Map<Int, Set<Segment>> = mapOf(
+val sevenSegmentDisplay: SevenDigitDisplay = mapOf(
     0 to setOf('a', 'b', 'c', 'e', 'f', 'g'),
     1 to setOf('c', 'f'),
     2 to setOf('a', 'c', 'd', 'e', 'g'),
@@ -17,6 +18,8 @@ val sevenSegmentDisplay: Map<Int, Set<Segment>> = mapOf(
     8 to setOf('a', 'b', 'c', 'd', 'e', 'f', 'g'),
     9 to setOf('a', 'b', 'c', 'd', 'f', 'g')
 )
+
+fun SevenDigitDisplay.findDigit(segments: Set<Segment>) = entries.first { it.value == segments }.key
 
 class Solution(private val signalPatterns: List<SignalPattern>) {
 
@@ -33,7 +36,7 @@ class Solution(private val signalPatterns: List<SignalPattern>) {
     private val segmentC = segmentsForOne - segmentF
     private val segmentD = segmentsForFour - segmentC - segmentB - segmentF
 
-    private fun decodeDigit(encodedDigit: Output) = encodedDigit.map { segment ->
+    private fun decodeSegments(encodedDigit: Digit) = encodedDigit.map { segment ->
         when (setOf(segment)) {
             segmentA -> 'a'
             segmentB -> 'b'
@@ -45,15 +48,15 @@ class Solution(private val signalPatterns: List<SignalPattern>) {
         }
     }.toSet()
 
-    fun decode(encodedDigit: Output) =
-        sevenSegmentDisplay.entries.first { (_, segmentsForDigit) ->
-            segmentsForDigit == decodeDigit(encodedDigit)
-        }.key
+    fun decode(encodedDigit: Digit) =
+        decodeSegments(encodedDigit).let { segments ->
+            sevenSegmentDisplay.findDigit(segments)
+        }
 }
 
 data class NoteEntry(
     val signalPatterns: List<SignalPattern>,
-    val outputValues: List<Output>
+    val outputValues: List<Digit>
 ) {
     companion object {
         fun entries(input: List<String>): List<NoteEntry> = input.map {
