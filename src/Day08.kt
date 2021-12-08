@@ -4,9 +4,9 @@ import kotlin.system.measureTimeMillis
 typealias Segment = Char
 typealias SignalPattern = Set<Segment>
 typealias EncodedDigit = Set<Segment>
-typealias SevenDigitDisplay = Map<Int, Set<Segment>>
+typealias SevenSegmentDisplay = Map<Int, Set<Segment>>
 
-val sevenSegmentDisplay: SevenDigitDisplay = mapOf(
+val sevenSegmentDisplay: SevenSegmentDisplay = mapOf(
     0 to setOf('a', 'b', 'c', 'e', 'f', 'g'),
     1 to setOf('c', 'f'),
     2 to setOf('a', 'c', 'd', 'e', 'g'),
@@ -19,7 +19,7 @@ val sevenSegmentDisplay: SevenDigitDisplay = mapOf(
     9 to setOf('a', 'b', 'c', 'd', 'f', 'g')
 )
 
-fun SevenDigitDisplay.findDigit(segments: Set<Segment>) = entries.first { it.value == segments }.key
+fun SevenSegmentDisplay.findDigit(segments: Set<Segment>) = entries.first { it.value == segments }.key
 
 class Solution(private val signalPatterns: List<SignalPattern>) {
 
