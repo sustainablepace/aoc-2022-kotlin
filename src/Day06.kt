@@ -1,3 +1,5 @@
+import kotlin.system.measureTimeMillis
+
 fun main() {
     fun part1(input: List<String>): Int {
         var fish = input.first().split(",").map { it.toInt() }
@@ -40,11 +42,19 @@ fun main() {
 
     println(part1(testInput))
     check(part1(testInput) == 5934)
-    println(part1(input))
-    check(part1(input) == 346063)
+    val msPart1 = measureTimeMillis {
+        val solutionPart1 = part1(input)
+        println(solutionPart1)
+        check(solutionPart1 == 346063)
+    }
+    println("$msPart1 ms")
 
     println(part2(testInput))
     check(part2(testInput) == 26984457539)
-    println(part2(input))
-    check(part2(input) == 1572358335990)
+    val msPart2 = measureTimeMillis {
+        val solutionPart2 = part2(input)
+        println(solutionPart2)
+        check(solutionPart2 == 1572358335990)
+    }
+    println("$msPart2 ms")
 }

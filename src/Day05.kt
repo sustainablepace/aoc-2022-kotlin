@@ -1,5 +1,6 @@
 import kotlin.math.abs
 import kotlin.math.max
+import kotlin.system.measureTimeMillis
 
 typealias Point = Vector
 
@@ -55,11 +56,19 @@ fun main() {
 
     println(part1(testInput))
     check(part1(testInput) == 5)
-    println(part1(input))
-    check(part1(input) == 4728)
+    val msPart1 = measureTimeMillis {
+        val solutionPart1 = part1(input)
+        println(solutionPart1)
+        check(solutionPart1 == 4728)
+    }
+    println("$msPart1 ms")
 
     println(part2(testInput))
     check(part2(testInput) == 12)
-    println(part2(input))
-    check(part2(input) == 17717)
+    val msPart2 = measureTimeMillis {
+        val solutionPart2 = part2(input)
+        println(solutionPart2)
+        check(solutionPart2 == 17717)
+    }
+    println("$msPart2 ms")
 }
