@@ -58,7 +58,6 @@ fun main() {
 
     fun part2(input: List<String>): CorrectPosition = input.plannedCourse().followNewInterpretation()
 
-    // test if implementation meets criteria from the description, like:
     val testInput = readInput("Day02_test")
     check(part1(testInput).result() == 150)
 
