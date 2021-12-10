@@ -49,23 +49,28 @@ fun Line.withoutCompleteChunks(): Line {
     return line
 }
 
-fun Line.syntaxErrorScore() = firstOrNull()?.let { syntaxErrorScore(it) } ?: 0
+fun Line.syntaxErrorScore() =
+    withoutCompleteChunks()
+        .withoutOpeningBrackets()
+        .firstOrNull()
+        ?.let { syntaxErrorScore(it) } ?: 0
 
-fun Line.completionScore() = reversed().let {
-    brackets.fold(it) { acc, bracket -> acc.replace(bracket.first, bracket.second) }
-}.toList().fold(0L) { acc, ch -> 5L * acc + completionScore(ch) }
+fun Line.completionScore() =
+    withoutCompleteChunks()
+        .reversed()
+        .let {
+            brackets.fold(it) { acc, bracket -> acc.replace(bracket.first, bracket.second) }
+        }
+        .toList()
+        .fold(0L) { acc, ch -> 5L * acc + completionScore(ch) }
 
 class NavigationSubsystem(private val input: List<String>) {
 
-    fun totalSyntaxErrorScore() =
-        input
-            .map { it.withoutCompleteChunks().withoutOpeningBrackets() }
-            .sumOf { it.syntaxErrorScore() }
+    fun totalSyntaxErrorScore() = input.sumOf { it.syntaxErrorScore() }
 
     fun middleCompletionScore(): Long =
         input
-            .map { it.withoutCompleteChunks() }
-            .filter { it.withoutOpeningBrackets().syntaxErrorScore() == 0 }
+            .filter { it.syntaxErrorScore() == 0 }
             .map { it.completionScore() }
             .sortedDescending()
             .let {
