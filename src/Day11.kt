@@ -32,7 +32,7 @@ fun Grid.increaseAndRecordFlashes(): Set<Flash> =
         flashes.toSet()
     }
 
-fun Grid.processFlashes(recordedFlashes: Set<Flash>): Int {
+fun Grid.processAndCountFlashes(recordedFlashes: Set<Flash>): Int {
     var numFlashesInStep = 0
     var flashes = recordedFlashes
     while (flashes.isNotEmpty()) {
@@ -61,7 +61,7 @@ fun main() {
         val grid: Grid = gridOf(input)
         return (0..99).sumOf {
             grid.increaseAndRecordFlashes().let {
-                grid.processFlashes(it)
+                grid.processAndCountFlashes(it)
             }
         }
     }
@@ -73,7 +73,7 @@ fun main() {
         do {
             steps++
             grid.increaseAndRecordFlashes().also {
-                flashesInStep = grid.processFlashes(it)
+                flashesInStep = grid.processAndCountFlashes(it)
             }
         } while (flashesInStep != 100)
         return steps
