@@ -1,3 +1,6 @@
+package past
+
+import readInput
 import kotlin.system.measureTimeMillis
 
 fun main() {

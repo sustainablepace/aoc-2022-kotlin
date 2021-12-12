@@ -1,3 +1,7 @@
+package past
+
+import readInput
+
 fun main() {
     fun part1(input: List<String>): Int =
         input.map { it.toInt() }

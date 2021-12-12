@@ -1,4 +1,7 @@
-import Direction.*
+package past
+
+import past.Direction.*
+import readInput
 
 typealias PlannedCourse = List<Command>
 

@@ -1,3 +1,6 @@
+package past
+
+import readInput
 import java.util.Collections.max
 import java.util.Collections.min
 import kotlin.math.abs

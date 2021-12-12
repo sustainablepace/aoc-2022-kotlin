@@ -1,8 +1,11 @@
-import Syntax.brackets
-import Syntax.completeChunks
-import Syntax.completionScore
-import Syntax.openingBrackets
-import Syntax.syntaxErrorScore
+package past
+
+import past.Syntax.brackets
+import past.Syntax.completeChunks
+import past.Syntax.completionScore
+import past.Syntax.openingBrackets
+import past.Syntax.syntaxErrorScore
+import readInput
 import kotlin.system.measureTimeMillis
 
 typealias Bracket = Char

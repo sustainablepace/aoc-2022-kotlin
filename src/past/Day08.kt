@@ -1,4 +1,7 @@
-import NoteEntry.Companion.entries
+package past
+
+import past.NoteEntry.Companion.entries
+import readInput
 import kotlin.system.measureTimeMillis
 
 typealias Segment = Char

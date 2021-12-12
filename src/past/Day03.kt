@@ -1,3 +1,7 @@
+package past
+
+import readInput
+
 typealias BinaryNumber = String
 fun BinaryNumber.toDecimal() = toInt(2)
 

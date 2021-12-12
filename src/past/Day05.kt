@@ -1,3 +1,6 @@
+package past
+
+import readInput
 import kotlin.math.abs
 import kotlin.math.max
 import kotlin.system.measureTimeMillis

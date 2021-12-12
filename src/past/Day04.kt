@@ -1,3 +1,7 @@
+package past
+
+import readInput
+
 typealias DrawnNumbers = List<Int>
 
 @JvmInline

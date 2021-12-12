@@ -1,3 +1,6 @@
+package past
+
+import readInput
 import kotlin.system.measureTimeMillis
 
 data class P(val x: Int, val y: Int, val v: Int)
