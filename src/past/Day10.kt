@@ -88,8 +88,8 @@ fun main() {
     fun part2(input: List<String>): Long =
         NavigationSubsystem(input).middleCompletionScore()
 
-    val testInput = readInput("Day10_test")
-    val input = readInput("Day10")
+    val testInput = readInput("past/Day10_test")
+    val input = readInput("past/Day10")
 
     println(part1(testInput))
     check(part1(testInput) == 26397)

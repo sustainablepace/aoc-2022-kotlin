@@ -87,8 +87,8 @@ fun main() {
             }
         }
 
-    val testInput = readInput("Day08_test")
-    val input = readInput("Day08")
+    val testInput = readInput("past/Day08_test")
+    val input = readInput("past/Day08")
 
     println(part1(testInput))
     check(part1(testInput) == 26)

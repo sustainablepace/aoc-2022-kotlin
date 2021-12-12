@@ -40,8 +40,8 @@ fun main() {
         return swarm.sum()
     }
 
-    val testInput = readInput("Day06_test")
-    val input = readInput("Day06")
+    val testInput = readInput("past/Day06_test")
+    val input = readInput("past/Day06")
 
     println(part1(testInput))
     check(part1(testInput) == 5934)

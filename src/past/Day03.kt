@@ -59,10 +59,10 @@ value class DiagnosticReport(private val binaryNumbers: List<BinaryNumber>) {
 
 fun main() {
     // test if implementation meets criteria from the description, like:
-    val testInput = readInput("Day03_test")
+    val testInput = readInput("past/Day03_test")
     check(DiagnosticReport(testInput).powerConsumption() == 198)
 
-    val input = readInput("Day03")
+    val input = readInput("past/Day03")
     println(DiagnosticReport(input).powerConsumption())
 
     check(DiagnosticReport(testInput).lifeSupportRating() == 230)

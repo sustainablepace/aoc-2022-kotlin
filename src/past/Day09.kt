@@ -5,7 +5,7 @@ import kotlin.system.measureTimeMillis
 
 data class P(val x: Int, val y: Int, val v: Int)
 
-class Cave(val heightMap: Array<Array<Int>>) {
+class Cave_(val heightMap: Array<Array<Int>>) {
     private val width = heightMap.maxOf { it.size }
     private val height = heightMap.size
 
@@ -51,7 +51,7 @@ class Cave(val heightMap: Array<Array<Int>>) {
             basins.toSet()
         }
 
-    class Basin(private val cave: Cave, lowPoint: P) {
+    class Basin(private val cave: Cave_, lowPoint: P) {
         val size: Int get() = expansion.sumOf { it.size }
 
         private val expansion: MutableList<Set<P>> = mutableListOf(setOf(lowPoint))
@@ -88,16 +88,16 @@ fun parse(input: List<String>): Array<Array<Int>> {
 
 fun main() {
     fun part1(input: List<String>): Int =
-        Cave(parse(input)).lowPoints().sumOf { 1 + it.v }
+        Cave_(parse(input)).lowPoints().sumOf { 1 + it.v }
 
     fun part2(input: List<String>): Int =
-        Cave(parse(input)).basins().map { it.size }
+        Cave_(parse(input)).basins().map { it.size }
             .sortedDescending()
             .take(3)
             .fold(1) { acc, v -> acc * v }
 
-    val testInput = readInput("Day09_test")
-    val input = readInput("Day09")
+    val testInput = readInput("past/Day09_test")
+    val input = readInput("past/Day09")
 
     println(part1(testInput))
     check(part1(testInput) == 15)

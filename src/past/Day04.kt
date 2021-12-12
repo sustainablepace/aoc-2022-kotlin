@@ -93,11 +93,11 @@ fun main() {
     fun part2(input: List<String>): Int? = BingoSubsystem(input).checkLast()?.score
 
     // test if implementation meets criteria from the description, like:
-    val testInput = readInput("Day04_test")
+    val testInput = readInput("past/Day04_test")
     println(part1(testInput))
     check(part1(testInput) == 4512)
 
-    val input = readInput("Day04")
+    val input = readInput("past/Day04")
     println(part1(input))
 
     println(part2(testInput))

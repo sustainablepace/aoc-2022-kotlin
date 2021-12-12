@@ -61,10 +61,10 @@ fun main() {
 
     fun part2(input: List<String>): CorrectPosition = input.plannedCourse().followNewInterpretation()
 
-    val testInput = readInput("Day02_test")
+    val testInput = readInput("past/Day02_test")
     check(part1(testInput).result() == 150)
 
-    val input = readInput("Day02")
+    val input = readInput("past/Day02")
     println(part1(input).result())
 
     check(part2(testInput).result() == 900)

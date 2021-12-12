@@ -54,8 +54,8 @@ fun main() {
             line.pointsInLineSegment()
         }.groupBy { it }.count { it.value.size > 1 }
 
-    val testInput = readInput("Day05_test")
-    val input = readInput("Day05")
+    val testInput = readInput("past/Day05_test")
+    val input = readInput("past/Day05")
 
     println(part1(testInput))
     check(part1(testInput) == 5)

@@ -100,10 +100,10 @@ fun main() {
         return paths.size
     }
 
-    val testInput = readInput("Day12_test")
-    val testInput2 = readInput("Day12_test_2")
-    val testInput3 = readInput("Day12_test_3")
-    val input = readInput("Day12")
+    val testInput = readInput("past/Day12_test")
+    val testInput2 = readInput("past/Day12_test_2")
+    val testInput3 = readInput("past/Day12_test_3")
+    val input = readInput("past/Day12")
 
     println(part1(testInput))
     check(part1(testInput) == 10)

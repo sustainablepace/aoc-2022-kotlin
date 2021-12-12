@@ -82,8 +82,8 @@ fun main() {
         return steps
     }
 
-    val testInput = readInput("Day11_test")
-    val input = readInput("Day11")
+    val testInput = readInput("past/Day11_test")
+    val input = readInput("past/Day11")
 
     val testSolutionPart1 = part1(testInput)
     println(testSolutionPart1)
