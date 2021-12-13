@@ -2,55 +2,75 @@ import kotlin.math.abs
 import kotlin.system.measureTimeMillis
 
 data class Dot(val x: Int, val y: Int)
-data class FoldInstruction(val orientation: Char, val position: Int)
+class FoldInstruction private constructor(val isHorizontalFold: Boolean, val foldLine: Int) {
+    companion object {
+        fun create(input: String): FoldInstruction =
+            input
+                .replace("fold along ", "")
+                .split("=")
+                .let { (orientation, position) ->
+                    FoldInstruction(
+                        isHorizontalFold = orientation.first() == 'y',
+                        foldLine = position.toInt()
+                    )
+                }
+    }
+}
 
-fun foldNext(foldInstruction: FoldInstruction, dots: Set<Dot>): Set<Dot> =
-    if (foldInstruction.orientation == 'y') {
-        dots.map { (x, y) ->
-            Dot(x, foldInstruction.position - abs(y - foldInstruction.position))
-        }.toSet()
-    } else {
-        dots.map { (x, y) ->
-            Dot(foldInstruction.position - abs(x - foldInstruction.position), y)
-        }.toSet()
+typealias Paper = Set<Dot>
+
+fun Paper.fold(vararg foldInstructions: FoldInstruction): Paper =
+    foldInstructions.fold(this) { foldedPaper, instruction ->
+        if (instruction.isHorizontalFold) {
+            foldedPaper.map { (x, y) ->
+                Dot(
+                    x = x,
+                    y = instruction.foldLine - abs(y - instruction.foldLine)
+                )
+            }.toSet()
+        } else {
+            foldedPaper.map { (x, y) ->
+                Dot(
+                    x = instruction.foldLine - abs(x - instruction.foldLine),
+                    y = y
+                )
+            }.toSet()
+        }
     }
 
-fun foldManual(foldInstructions: List<FoldInstruction>, dots: Set<Dot>): Set<Dot> =
-    foldInstructions.fold(dots) { acc, instruction -> foldNext(instruction, acc) }
+fun Paper.print() = groupBy { it.y }
+    .toSortedMap()
+    .map { (_, dotsInLine) ->
+        (0..dotsInLine.maxOf { it.x }).map { x ->
+            if (dotsInLine.any { it.x == x }) '#' else ' '
+        }.joinToString("").let {
+            println(it)
+        }
+    }
 
 fun main() {
-    fun parse(input: List<String>): Pair<List<FoldInstruction>, Set<Dot>> =
-        input.filter { it.isNotBlank() }.partition { row -> row.startsWith("fold") }
+    fun parse(input: List<String>): Pair<List<FoldInstruction>, Paper> =
+        input
+            .filter { it.isNotBlank() }
+            .partition { it.startsWith("fold") }
             .let { (foldInstructions, dots) ->
                 foldInstructions.map {
-                    it.replace("fold along ", "").split("=").let { (orientation, position) ->
-                        FoldInstruction(orientation.first(), position.toInt())
-                    }
-                } to dots.map {
-                    it.split(",").let { (x, y) ->
-                        Dot(x.toInt(), y.toInt())
-                    }
+                    FoldInstruction.create(it)
+                } to dots.map { dot ->
+                    dot.split(",")
+                        .map { it.toInt() }
+                        .let { (x, y) -> Dot(x, y) }
                 }.toSet()
             }
 
     fun part1(input: List<String>): Int =
-        parse(input).let { (foldInstructions, dots) ->
-            foldNext(foldInstructions.first(), dots).size
+        parse(input).let { (foldInstructions, paper) ->
+            paper.fold(foldInstructions.first()).size
         }
 
-    fun part2(input: List<String>): String =
-        parse(input).let { (foldInstructions, dots) ->
-            foldManual(foldInstructions, dots)
-                .groupBy { it.y }
-                .toSortedMap()
-                .map { (_, dotsInLine) ->
-                    (0..dotsInLine.maxOf { it.x }).map { x ->
-                        if (dotsInLine.any { it.x == x }) '#' else ' '
-                    }.joinToString("").let {
-                        println(it)
-                    }
-                }
-            ""
+    fun part2(input: List<String>): Unit =
+        parse(input).let { (foldInstructions, paper) ->
+            paper.fold(*foldInstructions.toTypedArray()).print()
         }
 
     val testInput = readInput("Day13_test")
@@ -66,13 +86,10 @@ fun main() {
     println("$solutionPart1 ($msPart1 ms)")
     check(solutionPart1 == 602)
 
-    println(part2(testInput))
-    check(part2(testInput) == "")
+    part2(testInput)
 
-    val solutionPart2: String
     val msPart2 = measureTimeMillis {
-        solutionPart2 = part2(input)
+        part2(input)
     }
-    println("$solutionPart2 ($msPart2 ms)")
-    check(solutionPart2 == "")
+    println("($msPart2 ms)")
 }
