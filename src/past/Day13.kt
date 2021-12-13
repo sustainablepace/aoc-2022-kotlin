@@ -1,3 +1,6 @@
+package past
+
+import readInput
 import kotlin.math.abs
 import kotlin.system.measureTimeMillis
 
@@ -6,7 +9,7 @@ class FoldInstruction private constructor(val isHorizontalFold: Boolean, val fol
     companion object {
         fun create(input: String): FoldInstruction =
             input
-                .replace("fold along ", "")
+                .replace("past.fold along ", "")
                 .split("=")
                 .let { (orientation, position) ->
                     FoldInstruction(
@@ -52,7 +55,7 @@ fun main() {
     fun parse(input: List<String>): Pair<List<FoldInstruction>, Paper> =
         input
             .filter { it.isNotBlank() }
-            .partition { it.startsWith("fold") }
+            .partition { it.startsWith("past.fold") }
             .let { (foldInstructions, dots) ->
                 foldInstructions.map {
                     FoldInstruction.create(it)
@@ -73,8 +76,8 @@ fun main() {
             paper.fold(*foldInstructions.toTypedArray()).print()
         }
 
-    val testInput = readInput("Day13_test")
-    val input = readInput("Day13")
+    val testInput = readInput("past/Day13_test")
+    val input = readInput("past/Day13")
 
     println(part1(testInput))
     check(part1(testInput) == 17)
