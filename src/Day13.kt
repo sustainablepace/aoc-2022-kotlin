@@ -4,27 +4,23 @@ import kotlin.system.measureTimeMillis
 data class Dot(val x: Int, val y: Int)
 data class FoldInstruction(val orientation: Char, val position: Int)
 
-fun foldNext(foldInstruction: FoldInstruction, dots: Set<Dot>): Set<Dot> {
-    return if (foldInstruction.orientation == 'y') {
-        val newSet = dots.map { (x, y) ->
+fun foldNext(foldInstruction: FoldInstruction, dots: Set<Dot>): Set<Dot> =
+    if (foldInstruction.orientation == 'y') {
+        dots.map { (x, y) ->
             Dot(x, foldInstruction.position - abs(y - foldInstruction.position))
         }.toSet()
-        newSet
     } else {
-        val newSet = dots.map { (x, y) ->
+        dots.map { (x, y) ->
             Dot(foldInstruction.position - abs(x - foldInstruction.position), y)
         }.toSet()
-        newSet
     }
-}
 
-fun foldManual(foldInstructions: List<FoldInstruction>, dots: Set<Dot>): Set<Dot> {
-    return foldInstructions.fold(dots) { acc, instruction -> foldNext(instruction, acc) }
-}
+fun foldManual(foldInstructions: List<FoldInstruction>, dots: Set<Dot>): Set<Dot> =
+    foldInstructions.fold(dots) { acc, instruction -> foldNext(instruction, acc) }
 
 fun main() {
-    fun parse(input: List<String>): Pair<List<FoldInstruction>, Set<Dot>> {
-        return input.filter { it.isNotBlank() }.partition { row -> row.startsWith("fold") }
+    fun parse(input: List<String>): Pair<List<FoldInstruction>, Set<Dot>> =
+        input.filter { it.isNotBlank() }.partition { row -> row.startsWith("fold") }
             .let { (foldInstructions, dots) ->
                 foldInstructions.map {
                     it.replace("fold along ", "").split("=").let { (orientation, position) ->
@@ -36,16 +32,14 @@ fun main() {
                     }
                 }.toSet()
             }
-    }
 
-    fun part1(input: List<String>): Int {
-        return parse(input).let { (foldInstructions, dots) ->
+    fun part1(input: List<String>): Int =
+        parse(input).let { (foldInstructions, dots) ->
             foldNext(foldInstructions.first(), dots).size
         }
-    }
 
-    fun part2(input: List<String>): String {
-        return parse(input).let { (foldInstructions, dots) ->
+    fun part2(input: List<String>): String =
+        parse(input).let { (foldInstructions, dots) ->
             foldManual(foldInstructions, dots)
                 .groupBy { it.y }
                 .toSortedMap()
@@ -58,7 +52,6 @@ fun main() {
                 }
             ""
         }
-    }
 
     val testInput = readInput("Day13_test")
     val input = readInput("Day13")
