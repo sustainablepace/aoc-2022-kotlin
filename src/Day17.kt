@@ -7,7 +7,7 @@ fun main() {
         val (trenchXRange, trenchYRange) = input.first().replace("target area: ", "").split(", ").map {
             it.substring(2).split("..").map {
                 it.toInt()
-            }.let { (x,y) -> min(x,y)..max(x,y) }
+            }.let { (x, y) -> min(x, y)..max(x, y) }
         }
         val xRange = 0..100
         val yRange = -100..100
@@ -20,24 +20,24 @@ fun main() {
                 var step = 0
                 var maxY = Int.MIN_VALUE
                 var inTrench = false
-                while(currentY > trenchYRange.first() && !inTrench) {
-                        currentX+= xVelocity
-                    currentY+= yVelocity
+                while (currentY > trenchYRange.first() && !inTrench) {
+                    currentX += xVelocity
+                    currentY += yVelocity
                     step++
-                    if(currentY > maxY) {
+                    if (currentY > maxY) {
                         maxY = currentY
                     }
-                    if(currentX in trenchXRange && currentY in trenchYRange) {
+                    if (currentX in trenchXRange && currentY in trenchYRange) {
                         inTrench = true
                     }
-                    if(xVelocity > 0) {
+                    if (xVelocity > 0) {
                         xVelocity--
-                    } else if(xVelocity < 0) {
+                    } else if (xVelocity < 0) {
                         xVelocity++
                     }
                     yVelocity--
                 }
-                if(!inTrench) {
+                if (!inTrench) {
                     maxY = Int.MIN_VALUE
                 }
                 maxY
@@ -49,7 +49,7 @@ fun main() {
         val (trenchXRange, trenchYRange) = input.first().replace("target area: ", "").split(", ").map {
             it.substring(2).split("..").map {
                 it.toInt()
-            }.let { (x,y) -> min(x,y)..max(x,y) }
+            }.let { (x, y) -> min(x, y)..max(x, y) }
         }
         val xRange = -1000..1000
         val yRange = -1000..1000
@@ -61,24 +61,24 @@ fun main() {
                 var yVelocity = y
                 var step = 0
                 var inTrench = false
-                while(currentY > trenchYRange.first() && !inTrench) {
-                    currentX+= xVelocity
-                    currentY+= yVelocity
+                while (currentY > trenchYRange.first() && !inTrench) {
+                    currentX += xVelocity
+                    currentY += yVelocity
                     step++
 
-                    if(currentX in trenchXRange && currentY in trenchYRange) {
+                    if (currentX in trenchXRange && currentY in trenchYRange) {
                         inTrench = true
                     }
-                    if(xVelocity > 0) {
+                    if (xVelocity > 0) {
                         xVelocity--
-                    } else if(xVelocity < 0) {
+                    } else if (xVelocity < 0) {
                         xVelocity++
                     }
                     yVelocity--
                 }
-                if(inTrench) {
+                if (inTrench) {
 
-                x to y
+                    x to y
                 } else null
             }
         }.filterNotNull()
