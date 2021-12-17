@@ -51,8 +51,8 @@ fun main() {
                 it.toInt()
             }.let { (x, y) -> min(x, y)..max(x, y) }
         }
-        val xRange = -1000..1000
-        val yRange = -1000..1000
+        val xRange = -250..250
+        val yRange = -100..100
         val pairs = xRange.flatMap { x ->
             yRange.mapNotNull { y ->
                 var currentX = 0
@@ -106,5 +106,5 @@ fun main() {
         solutionPart2 = part2(input)
     }
     println("$solutionPart2 ($msPart2 ms)")
-    check(solutionPart2 == 99053143)
+    check(solutionPart2 == 1994)
 }
