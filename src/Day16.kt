@@ -1,5 +1,3 @@
-import java.lang.Integer.min
-import kotlin.math.ceil
 import kotlin.system.measureTimeMillis
 
 typealias BinaryNumber = String
@@ -24,7 +22,6 @@ val m = mapOf(
     'E' to "1110",
     'F' to "1111"
 )
-
 data class DecodedMessage(var binaryNumber: String) {
     fun calc(): Long {
         return when (typeId) {
