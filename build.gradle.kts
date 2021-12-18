@@ -17,3 +17,9 @@ tasks {
         gradleVersion = "7.3"
     }
 }
+
+
+dependencies {
+    implementation("com.fasterxml.jackson.core:jackson-core:2.13.0")
+    implementation("com.fasterxml.jackson.core:jackson-databind:2.13.0")
+}
