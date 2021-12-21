@@ -86,7 +86,7 @@ fun main() {
         }
         do {
             games = games.partition { it.isOver }.let { (done, ongoing) ->
-                (ongoing.flatMap { ongoingGame ->
+                (done + ongoing.flatMap { ongoingGame ->
                     listOf(
                         ongoingGame.rollPlayer1(1, 3),
                         ongoingGame.rollPlayer1(3, 4),
@@ -95,7 +95,6 @@ fun main() {
                         ongoingGame.rollPlayer1(6, 7),
                         ongoingGame.rollPlayer1(3, 8),
                         ongoingGame.rollPlayer1(1, 9)
-
                     ).partition { it.isOver }.let { (done, ongoing) ->
                         done + ongoing.flatMap { ongoingGameAfterP1Rolled ->
                             listOf(
@@ -109,15 +108,16 @@ fun main() {
                             )
                         }
                     }
-                } + done).let { doneAndOngoing ->
-                    doneAndOngoing.groupBy { it.game }.let { map ->
-                        map.map { mapEntry ->
-                            DistinctGameCounter(mapEntry.value.sumOf { it.numGames }, mapEntry.key)
+                }).let { doneAndOngoing ->
+                    doneAndOngoing.groupBy { it.game }.let { groups ->
+                        groups.map { (game, distinctGameCounters) ->
+                            DistinctGameCounter(distinctGameCounters.sumOf { it.numGames }, game)
                         }
                     }
                 }
             }
         } while (games.any { !it.isOver })
+
         return games.partition { it.game.player1.score >= 21 }.let { (winsP1, winsP2) ->
             val numWinsP1 = winsP1.sumOf { it.numGames }
             val numWinsP2 = winsP2.sumOf { it.numGames }
