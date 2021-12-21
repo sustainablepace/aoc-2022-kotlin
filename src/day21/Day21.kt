@@ -1,22 +1,50 @@
 package day21
 
+import day21.Player.Companion.createPlayers
 import readInput
 import kotlin.system.measureTimeMillis
 
-class DeterministicDice {
-    private val seq = generateSequence(1) { (it % 100) + 1 }
-    var rolls = 0
-
-    fun roll(): Int {
-        rolls++
-        return seq.take(rolls).toList().last()
+data class Player private constructor(
+    val index: Int,
+    val startSpace: Int,
+    var currentSpace: Int = startSpace,
+    var score: Int = 0
+) {
+    companion object {
+        fun createPlayers(input: List<String>) = input.map {
+            it
+                .replace("Player ", "")
+                .replace(" starting position: ", ",")
+                .split(",")
+                .let { (player, pos) ->
+                    Player(player.toInt() - 1, pos.toInt())
+                }
+        }
     }
 }
 
-data class Player(val index: Int, val startSpace: Int, var currentSpace: Int = startSpace, var score: Int = 0)
+fun Player.move(points: Int): Player =
+    ((currentSpace + points - 1) % 10 + 1).let { newSpace ->
+        copy(
+            score = score + newSpace,
+            currentSpace = newSpace
+        )
+    }
 
-class GamePart1(private val players: List<Player>, private val die: DeterministicDice, val gameEndsAtPoints: Int = 1000) {
-    val isNotOver: Boolean get() = players.maxOf { it.score } < gameEndsAtPoints
+class GamePart1(val players: List<Player>, val gameEndsAtPoints: Int = 1000) {
+
+    class DeterministicDie {
+        private val seq = generateSequence(1) { (it % 100) + 1 }
+        var rolls = 0
+
+        fun roll(): Int {
+            rolls++
+            return seq.take(rolls).toList().last()
+        }
+    }
+
+    val die: DeterministicDie = DeterministicDie()
+    val isFinished: Boolean get() = players.maxOf { it.score } >= gameEndsAtPoints
 
     fun nextRound() {
         players.forEach { p ->
@@ -29,101 +57,90 @@ class GamePart1(private val players: List<Player>, private val die: Deterministi
     }
 }
 
-fun parsePlayers(input: List<String>) = input.map {
-    it
-        .replace("Player ", "")
-        .replace(" starting position: ", ",")
-        .split(",")
-        .let { (player, pos) ->
-            Player(player.toInt() - 1, pos.toInt())
-        }
+data class GamePart2(val player1: Player, val player2: Player)
+
+data class DistinctGameCounter(val numIdenticalGames: Long, val game: GamePart2) {
+    val isFinished: Boolean get() = game.player1.score >= 21 || game.player2.score >= 21
+
+    fun afterPlayer1Rolled(occurences: Long, points: Int): DistinctGameCounter =
+        copy(
+            numIdenticalGames = numIdenticalGames * occurences,
+            game = game.copy(player1 = game.player1.move(points))
+        )
+
+    fun afterPlayer2Rolled(occurences: Long, points: Int): DistinctGameCounter =
+        copy(
+            numIdenticalGames = numIdenticalGames * occurences,
+            game = game.copy(player2 = game.player2.move(points))
+        )
 }
 
 fun main() {
 
-    fun part1(input: List<String>): Int {
-        val players = parsePlayers(input)
-        val die = DeterministicDice()
-        val game = GamePart1(players, die)
-        while (game.isNotOver) {
-            game.nextRound()
+    fun part1(input: List<String>): Int =
+        GamePart1(
+            players = createPlayers(input)
+        ).run {
+            while (!isFinished) {
+                nextRound()
+            }
+            players.first { it.score < gameEndsAtPoints }.score * die.rolls
         }
-        return players.first { it.score < game.gameEndsAtPoints }.score * die.rolls
-    }
 
-    data class GamePart2(val player1: Player, val player2: Player)
-    data class DistinctGameCounter(val numGames: Long, val game: GamePart2) {
-        val isOver: Boolean get() = game.player1.score >= 21 || game.player2.score >= 21
-    }
-
-    fun part2(input: List<String>): Long {
-        val players = parsePlayers(input)
-
-        var games = listOf(
-            DistinctGameCounter(
-                numGames = 1,
-                game = GamePart2(
-                    player1 = players[0],
-                    player2 = players[1]
+    fun part2(input: List<String>): Long =
+        generateSequence(createPlayers(input).let { (p1, p2) ->
+            listOf(
+                DistinctGameCounter(
+                    numIdenticalGames = 1,
+                    game = GamePart2(
+                        player1 = p1,
+                        player2 = p2
+                    )
                 )
             )
-        )
-
-        fun DistinctGameCounter.rollPlayer1(occurances: Long, points: Int): DistinctGameCounter {
-            val newSquare = (game.player1.currentSpace + points - 1) % 10 + 1
-            return DistinctGameCounter(numGames * occurances, game.copy(player1 = game.player1.copy(
-                score = game.player1.score + newSquare,
-                currentSpace = newSquare
-            )))
-        }
-
-        fun DistinctGameCounter.rollPlayer2(occurances: Long, points: Int): DistinctGameCounter {
-            val newSquare = (game.player2.currentSpace + points - 1) % 10 + 1
-            return DistinctGameCounter(numGames * occurances, game.copy(player2 = game.player2.copy(
-                score = game.player2.score + newSquare,
-                currentSpace = newSquare
-            )))
-        }
-        do {
-            games = games.partition { it.isOver }.let { (done, ongoing) ->
-                (done + ongoing.flatMap { ongoingGame ->
+        }) { games ->
+            games.partition {
+                it.isFinished
+            }.let { (finishedGames, gamesInProgress) ->
+                (finishedGames + gamesInProgress.flatMap { gameInProgress ->
                     listOf(
-                        ongoingGame.rollPlayer1(1, 3),
-                        ongoingGame.rollPlayer1(3, 4),
-                        ongoingGame.rollPlayer1(6, 5),
-                        ongoingGame.rollPlayer1(7, 6),
-                        ongoingGame.rollPlayer1(6, 7),
-                        ongoingGame.rollPlayer1(3, 8),
-                        ongoingGame.rollPlayer1(1, 9)
-                    ).partition { it.isOver }.let { (done, ongoing) ->
-                        done + ongoing.flatMap { ongoingGameAfterP1Rolled ->
+                        gameInProgress.afterPlayer1Rolled(1, 3),
+                        gameInProgress.afterPlayer1Rolled(3, 4),
+                        gameInProgress.afterPlayer1Rolled(6, 5),
+                        gameInProgress.afterPlayer1Rolled(7, 6),
+                        gameInProgress.afterPlayer1Rolled(6, 7),
+                        gameInProgress.afterPlayer1Rolled(3, 8),
+                        gameInProgress.afterPlayer1Rolled(1, 9)
+                    ).partition { it.isFinished }.let { (finishedGamesAfterPlayer1Rolled, gamesInProgressAfterPlayer1Rolled) ->
+                        finishedGamesAfterPlayer1Rolled + gamesInProgressAfterPlayer1Rolled.flatMap { gameInProgressAfterPlayer1Rolled ->
                             listOf(
-                                ongoingGameAfterP1Rolled.rollPlayer2(1, 3),
-                                ongoingGameAfterP1Rolled.rollPlayer2(3, 4),
-                                ongoingGameAfterP1Rolled.rollPlayer2(6, 5),
-                                ongoingGameAfterP1Rolled.rollPlayer2(7, 6),
-                                ongoingGameAfterP1Rolled.rollPlayer2(6, 7),
-                                ongoingGameAfterP1Rolled.rollPlayer2(3, 8),
-                                ongoingGameAfterP1Rolled.rollPlayer2(1, 9)
+                                gameInProgressAfterPlayer1Rolled.afterPlayer2Rolled(1, 3),
+                                gameInProgressAfterPlayer1Rolled.afterPlayer2Rolled(3, 4),
+                                gameInProgressAfterPlayer1Rolled.afterPlayer2Rolled(6, 5),
+                                gameInProgressAfterPlayer1Rolled.afterPlayer2Rolled(7, 6),
+                                gameInProgressAfterPlayer1Rolled.afterPlayer2Rolled(6, 7),
+                                gameInProgressAfterPlayer1Rolled.afterPlayer2Rolled(3, 8),
+                                gameInProgressAfterPlayer1Rolled.afterPlayer2Rolled(1, 9)
                             )
                         }
                     }
-                }).let { doneAndOngoing ->
-                    doneAndOngoing.groupBy { it.game }.let { groups ->
+                }).let { allGames ->
+                    allGames.groupBy { it.game }.let { groups ->
                         groups.map { (game, distinctGameCounters) ->
-                            DistinctGameCounter(distinctGameCounters.sumOf { it.numGames }, game)
+                            DistinctGameCounter(distinctGameCounters.sumOf { it.numIdenticalGames }, game)
                         }
                     }
                 }
             }
-        } while (games.any { !it.isOver })
-
-        return games.partition { it.game.player1.score >= 21 }.let { (winsP1, winsP2) ->
-            val numWinsP1 = winsP1.sumOf { it.numGames }
-            val numWinsP2 = winsP2.sumOf { it.numGames }
-            if (numWinsP1 > numWinsP2) numWinsP1 else numWinsP2
+        }.first {
+            it.all { it.isFinished }
+        }.let {
+            it.partition { it.game.player1.score >= 21 }.let { (winsP1, winsP2) ->
+                val numWinsP1 = winsP1.sumOf { it.numIdenticalGames }
+                val numWinsP2 = winsP2.sumOf { it.numIdenticalGames }
+                if (numWinsP1 > numWinsP2) numWinsP1 else numWinsP2
+            }
         }
-    }
 
     val testInput = readInput("day21/Day21_test")
     val input = readInput("day21/Day21")
