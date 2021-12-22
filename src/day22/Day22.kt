@@ -47,7 +47,6 @@ data class Cuboid(val xRange: IntRange, val yRange: IntRange, val zRange: IntRan
             setOf(this)
         } else {
             val intersection = intersect(c)!!
-
             val xRanges: Set<IntRange> = xRange.minus(intersection.xRange)
             val yRanges: Set<IntRange> = yRange.minus(intersection.yRange)
             val zRanges: Set<IntRange> = zRange.minus(intersection.zRange)
@@ -226,10 +225,8 @@ data class Cuboid(val xRange: IntRange, val yRange: IntRange, val zRange: IntRan
                     setOf(Cuboid(intersection.xRange, yRanges.first(), zRange))
                 )
             }  else emptySet()
-
         }
     }
-
 }
 
 data class Cube(val x: Int, val y: Int, val z: Int)
