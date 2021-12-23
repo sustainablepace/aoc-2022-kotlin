@@ -8,115 +8,94 @@ import kotlin.system.measureTimeMillis
 fun IntRange.hasIntersection(r: IntRange) = first in r || last in r || r.first in this || r.last in this
 fun IntRange.intersect(r: IntRange): IntRange = max(first, r.first)..min(last, r.last)
 fun IntRange.contains(r: IntRange) = first <= r.first && last >= r.last
-fun IntRange.minus(r: IntRange) =
-    (
-            if (first < r.first) {
-                setOf(first..r.first - 1)
-            } else emptySet()
-            ).union(
-            if (last > r.last) {
-                setOf(r.last + 1..last)
-            } else emptySet()
-        )
+operator fun IntRange.minus(r: IntRange) =
+    if (first < r.first) {
+        setOf(first..r.first - 1)
+    } else {
+        emptySet()
+    } + if (last > r.last) {
+        setOf(r.last + 1..last)
+    } else {
+        emptySet()
+    }
 
 data class Cuboid(val xRange: IntRange, val yRange: IntRange, val zRange: IntRange) {
-    val size: Long get() = (xRange.last.toLong() - xRange.first + 1) * (yRange.last - yRange.first + 1) * (zRange.last - zRange.first + 1)
 
-    fun contains(r: Cuboid) = xRange.contains(r.xRange) &&
-            yRange.contains(r.yRange) &&
-            zRange.contains(r.zRange)
+    val size: Long
+        get() = (xRange.last.toLong() - xRange.first + 1) *
+                (yRange.last - yRange.first + 1) *
+                (zRange.last - zRange.first + 1)
 
-    private fun hasIntersection(c: Cuboid) =
-        xRange.hasIntersection(c.xRange) &&
-                yRange.hasIntersection(c.yRange) &&
-                zRange.hasIntersection(c.zRange)
-
-    fun intersect(c: Cuboid) = if (hasIntersection(c)) {
-        Cuboid(
-            xRange.intersect(c.xRange),
-            yRange.intersect(c.yRange),
-            zRange.intersect(c.zRange),
-        )
-    } else null
+    fun intersect(c: Cuboid) =
+        if (xRange.hasIntersection(c.xRange) &&
+            yRange.hasIntersection(c.yRange) &&
+            zRange.hasIntersection(c.zRange)
+        ) {
+            Cuboid(
+                xRange.intersect(c.xRange),
+                yRange.intersect(c.yRange),
+                zRange.intersect(c.zRange),
+            )
+        } else null
 
     operator fun plus(c: Set<Cuboid>): Set<Cuboid> {
-        return c.flatMap { it.minus(this) }.union(setOf(this))
+        return c.flatMap { it - this }.union(setOf(this))
     }
-    operator fun minus(c: Cuboid): Set<Cuboid> {
-        return if (!hasIntersection(c)) {
-            setOf(this)
-        } else {
-            val intersection = intersect(c)!!
-            val xRanges: Set<IntRange> = xRange.minus(intersection.xRange)
-            val yRanges: Set<IntRange> = yRange.minus(intersection.yRange)
-            val zRanges: Set<IntRange> = zRange.minus(intersection.zRange)
 
-            return if(xRanges.size == 0 && yRanges.size == 0 && zRanges.size == 0) { // #01
-                emptySet()
-            } else if(xRanges.size == 1 && yRanges.size == 0 && zRanges.size == 0) { // #02
-                setOf(Cuboid(xRanges.first(), yRange, zRange))
-            } else if(xRanges.size == 0 && yRanges.size == 1 && zRanges.size == 0) { // #03
-                setOf(Cuboid(xRange, yRanges.first(), zRange))
-            } else if(xRanges.size == 0 && yRanges.size == 0 && zRanges.size == 1) { // #04
-                setOf(Cuboid(xRange, yRange, zRanges.first()))
-            } else if(xRanges.size == 2 && yRanges.size == 0 && zRanges.size == 0) { // #05
-                xRanges.map {
-                    Cuboid(it, yRange, zRange)
-                }.toSet()
-            } else if(xRanges.size == 0 && yRanges.size == 2 && zRanges.size == 0) { // #06
-                yRanges.map {
-                    Cuboid(xRange, it, zRange)
-                }.toSet()
-            } else if(xRanges.size == 0 && yRanges.size == 0 && zRanges.size == 2) { // #07
-                zRanges.map {
-                    Cuboid(xRange, yRange, it)
-                }.toSet()
-            } else if(xRanges.size == 1 && yRanges.size == 1 && zRanges.size == 0) { // #08
-                setOf(
-                    Cuboid(xRanges.first(), yRange, zRange),
-                    Cuboid(intersection.xRange, yRanges.first(), zRange)
-                )
-            } else if(xRanges.size == 1 && yRanges.size == 0 && zRanges.size == 1) { // #09
-                setOf(
-                    Cuboid(xRanges.first(), yRange, zRange),
-                    Cuboid(intersection.xRange, yRange, zRanges.first())
-                )
-            } else if(xRanges.size == 0 && yRanges.size == 1 && zRanges.size == 1) { // #10
-                setOf(
-                    Cuboid(xRange, yRanges.first(), zRange),
-                    Cuboid(xRange, intersection.yRange, zRanges.first())
-                )
-            } else if(xRanges.size == 1 && yRanges.size == 1 && zRanges.size == 1) { // #11
+    operator fun minus(c: Cuboid): Set<Cuboid> =
+        intersect(c)?.let { intersection ->
+            val xRanges: Set<IntRange> = xRange - intersection.xRange
+            val yRanges: Set<IntRange> = yRange - intersection.yRange
+            val zRanges: Set<IntRange> = zRange - intersection.zRange
+            val l = listOf(xRanges, yRanges, zRanges)
+
+            return if (l.sumOf { it.size } == 1 || l.sumOf { it.size } == 2 && l.any { it.size == 2 }) {
+                xRanges.map { Cuboid(it, yRange, zRange) }.toSet() +
+                        yRanges.map { Cuboid(xRange, it, zRange) } +
+                        zRanges.map { Cuboid(xRange, yRange, it) }
+            } else if (xRanges.size == 1 && yRanges.size == 1 && zRanges.size == 0) { // #08
+                xRanges.map { Cuboid(it, yRange, zRange) }.toSet() +
+                        yRanges.map { Cuboid(intersection.xRange, it, zRange) }
+            } else if (xRanges.size == 1 && yRanges.size == 0 && zRanges.size == 1) { // #09
+                zRanges.map { Cuboid(xRange, yRange, it) }.toSet() +
+                        xRanges.map { Cuboid(it, yRange, intersection.zRange) }
+            } else if (xRanges.size == 0 && yRanges.size == 1 && zRanges.size == 1) { // #10
+                yRanges.map {Cuboid(xRange, it, zRange) }.toSet() +
+                        zRanges.map { Cuboid(xRange, intersection.yRange, it) }
+            } else if (xRanges.size == 1 && yRanges.size == 1 && zRanges.size == 1) { // #11
                 setOf(
                     Cuboid(xRanges.first(), yRange, zRange),
                     Cuboid(intersection.xRange, yRanges.first(), zRange),
                     Cuboid(intersection.xRange, intersection.yRange, zRanges.first())
                 )
-            } else if(xRanges.size == 2 && yRanges.size == 1 && zRanges.size == 1) { // #12
+            } else if (xRanges.size == 2 && yRanges.size == 1 && zRanges.size == 1) { // #12
                 xRanges.map {
                     Cuboid(it, yRange, zRange)
                 }.toSet().union(
-                setOf(
-                    Cuboid(intersection.xRange, yRanges.first(), zRange),
-                    Cuboid(intersection.xRange, intersection.yRange, zRanges.first())
-                ) )
-            } else if(xRanges.size == 1 && yRanges.size == 2 && zRanges.size == 1) { // #13
+                    setOf(
+                        Cuboid(intersection.xRange, yRanges.first(), zRange),
+                        Cuboid(intersection.xRange, intersection.yRange, zRanges.first())
+                    )
+                )
+            } else if (xRanges.size == 1 && yRanges.size == 2 && zRanges.size == 1) { // #13
                 yRanges.map {
                     Cuboid(xRange, it, zRange)
                 }.toSet().union(
-                setOf(
-                    Cuboid(xRanges.first(), intersection.yRange, zRange),
-                    Cuboid(intersection.xRange, intersection.yRange, zRanges.first())
-                ) )
-            } else if(xRanges.size == 1 && yRanges.size == 1 && zRanges.size == 2) {  // #14
+                    setOf(
+                        Cuboid(xRanges.first(), intersection.yRange, zRange),
+                        Cuboid(intersection.xRange, intersection.yRange, zRanges.first())
+                    )
+                )
+            } else if (xRanges.size == 1 && yRanges.size == 1 && zRanges.size == 2) {  // #14
                 zRanges.map {
                     Cuboid(xRange, yRange, it)
                 }.toSet().union(
-                setOf(
-                    Cuboid(xRanges.first(), yRange, intersection.zRange),
-                    Cuboid(intersection.xRange, yRanges.first(), intersection.zRange)
-                ) )
-            } else if(xRanges.size == 2 && yRanges.size == 2 && zRanges.size == 1) { // #15
+                    setOf(
+                        Cuboid(xRanges.first(), yRange, intersection.zRange),
+                        Cuboid(intersection.xRange, yRanges.first(), intersection.zRange)
+                    )
+                )
+            } else if (xRanges.size == 2 && yRanges.size == 2 && zRanges.size == 1) { // #15
                 xRanges.map {
                     Cuboid(it, yRange, zRange)
                 }.toSet().union(
@@ -128,7 +107,7 @@ data class Cuboid(val xRange: IntRange, val yRange: IntRange, val zRange: IntRan
                         Cuboid(intersection.xRange, intersection.yRange, zRanges.first()),
                     )
                 )
-            } else if(xRanges.size == 2 && yRanges.size == 1 && zRanges.size == 2) { // #16
+            } else if (xRanges.size == 2 && yRanges.size == 1 && zRanges.size == 2) { // #16
                 xRanges.map {
                     Cuboid(it, yRange, zRange)
                 }.toSet().union(
@@ -140,7 +119,7 @@ data class Cuboid(val xRange: IntRange, val yRange: IntRange, val zRange: IntRan
                         Cuboid(intersection.xRange, yRanges.first(), intersection.zRange),
                     )
                 )
-            } else if(xRanges.size == 1 && yRanges.size == 2 && zRanges.size == 2) {  // #17
+            } else if (xRanges.size == 1 && yRanges.size == 2 && zRanges.size == 2) {  // #17
                 yRanges.map {
                     Cuboid(xRange, it, zRange)
                 }.toSet().union(
@@ -152,7 +131,7 @@ data class Cuboid(val xRange: IntRange, val yRange: IntRange, val zRange: IntRan
                         Cuboid(xRanges.first(), intersection.yRange, intersection.zRange),
                     )
                 )
-            } else if(xRanges.size == 2 && yRanges.size == 2 && zRanges.size == 2) {  // #18
+            } else if (xRanges.size == 2 && yRanges.size == 2 && zRanges.size == 2) {  // #18
                 xRanges.map {
                     Cuboid(it, yRange, zRange)
                 }.toSet().union(
@@ -164,7 +143,7 @@ data class Cuboid(val xRange: IntRange, val yRange: IntRange, val zRange: IntRan
                         Cuboid(intersection.xRange, intersection.yRange, it)
                     }.toSet()
                 )
-            } else if(xRanges.size == 0 && yRanges.size == 2 && zRanges.size == 2) {  // #19
+            } else if (xRanges.size == 0 && yRanges.size == 2 && zRanges.size == 2) {  // #19
                 yRanges.map {
                     Cuboid(xRange, it, zRange)
                 }.toSet().union(
@@ -172,7 +151,7 @@ data class Cuboid(val xRange: IntRange, val yRange: IntRange, val zRange: IntRan
                         Cuboid(xRange, intersection.yRange, it)
                     }
                 )
-            } else if(xRanges.size == 2 && yRanges.size == 0 && zRanges.size == 2) {  // #20
+            } else if (xRanges.size == 2 && yRanges.size == 0 && zRanges.size == 2) {  // #20
                 xRanges.map {
                     Cuboid(it, yRange, zRange)
                 }.toSet().union(
@@ -180,7 +159,7 @@ data class Cuboid(val xRange: IntRange, val yRange: IntRange, val zRange: IntRan
                         Cuboid(intersection.xRange, yRange, it)
                     }
                 )
-            } else if(xRanges.size == 2 && yRanges.size == 2 && zRanges.size == 0) {  // #21
+            } else if (xRanges.size == 2 && yRanges.size == 2 && zRanges.size == 0) {  // #21
                 yRanges.map {
                     Cuboid(xRange, it, zRange)
                 }.toSet().union(
@@ -188,127 +167,95 @@ data class Cuboid(val xRange: IntRange, val yRange: IntRange, val zRange: IntRan
                         Cuboid(it, intersection.yRange, zRange)
                     }
                 )
-            } else if(xRanges.size == 0 && yRanges.size == 1 && zRanges.size == 2) {  // #22
+            } else if (xRanges.size == 0 && yRanges.size == 1 && zRanges.size == 2) {  // #22
                 zRanges.map {
                     Cuboid(xRange, yRange, it)
                 }.toSet().union(
                     setOf(Cuboid(xRange, yRanges.first(), intersection.zRange))
                 )
-            } else if(xRanges.size == 0 && yRanges.size == 2 && zRanges.size == 1) {  // #23
+            } else if (xRanges.size == 0 && yRanges.size == 2 && zRanges.size == 1) {  // #23
                 yRanges.map {
                     Cuboid(xRange, it, zRange)
                 }.toSet().union(
                     setOf(Cuboid(xRange, intersection.yRange, zRanges.first()))
                 )
-            } else if(xRanges.size == 1 && yRanges.size == 0 && zRanges.size == 2) {  // #24
+            } else if (xRanges.size == 1 && yRanges.size == 0 && zRanges.size == 2) {  // #24
                 zRanges.map {
                     Cuboid(xRange, yRange, it)
                 }.toSet().union(
                     setOf(Cuboid(xRanges.first(), yRange, intersection.zRange))
                 )
-            } else if(xRanges.size == 1 && yRanges.size == 2 && zRanges.size == 0) {  // #25
+            } else if (xRanges.size == 1 && yRanges.size == 2 && zRanges.size == 0) {  // #25
                 yRanges.map {
                     Cuboid(xRange, it, zRange)
                 }.toSet().union(
                     setOf(Cuboid(xRanges.first(), intersection.yRange, zRange))
                 )
-            } else if(xRanges.size == 2 && yRanges.size == 0 && zRanges.size == 1) {  // #26
+            } else if (xRanges.size == 2 && yRanges.size == 0 && zRanges.size == 1) {  // #26
                 xRanges.map {
                     Cuboid(it, yRange, zRange)
-                }.toSet().union(
-                    setOf(Cuboid(intersection.xRange, yRange, zRanges.first()))
-                )
-            } else if(xRanges.size == 2 && yRanges.size == 1 && zRanges.size == 0) {  // #27
+                }.toSet() +
+                        setOf(Cuboid(intersection.xRange, yRange, zRanges.first()))
+
+            } else if (xRanges.size == 2 && yRanges.size == 1 && zRanges.size == 0) {  // #27
                 xRanges.map {
                     Cuboid(it, yRange, zRange)
                 }.toSet().union(
                     setOf(Cuboid(intersection.xRange, yRanges.first(), zRange))
                 )
-            }  else emptySet()
-        }
-    }
+            } else emptySet()
+
+        } ?: setOf(this)
 }
 
 data class Cube(val x: Int, val y: Int, val z: Int)
 
-fun cuboid(xRange: IntRange, yRange: IntRange, zRange: IntRange): Set<Cube> {
-    return xRange.flatMap { x ->
-        yRange.flatMap { y ->
-            zRange.map { z ->
-                Cube(x, y, z)
-            }.filter { (x, y, z) ->
-                x in -50..50 && y in -50..50 && z in -50..50
-            }
+fun cuboids(input: List<String>) = input.map { row ->
+    row.split(" ").let { (command, cubes) ->
+        command to cubes.split(",").let { (xRange, yRange, zRange) ->
+            Cuboid(
+                xRange.replace("x=", "").split("..").let { (start, end) ->
+                    min(start.toInt(), end.toInt())..max(start.toInt(), end.toInt())
+                },
+                yRange.replace("y=", "").split("..").let { (start, end) ->
+                    min(start.toInt(), end.toInt())..max(start.toInt(), end.toInt())
+                },
+                zRange.replace("z=", "").split("..").let { (start, end) ->
+                    min(start.toInt(), end.toInt())..max(start.toInt(), end.toInt())
+                }
+            )
         }
-    }.toSet()
+    }
 }
 
 fun main() {
 
-    fun part1(input: List<String>): Int {
-        val cuboids = input.map { row ->
-            row.split(" ").let { (command, cubes) ->
-                command to cubes.split(",").let { (xRange, yRange, zRange) ->
-                    cuboid(
-                        xRange.replace("x=", "").split("..").let { (start, end) ->
-                            max(-50, min(start.toInt(), end.toInt()))..min(50, max(start.toInt(), end.toInt()))
-                        },
-                        yRange.replace("y=", "").split("..").let { (start, end) ->
-                            max(-50, min(start.toInt(), end.toInt()))..min(50, max(start.toInt(), end.toInt()))
-                        },
-                        zRange.replace("z=", "").split("..").let { (start, end) ->
-                            max(-50, min(start.toInt(), end.toInt()))..min(50, max(start.toInt(), end.toInt()))
-                        }
-                    )
-                }
+    fun part1(input: List<String>): Long {
+
+        var on = emptySet<Cuboid>()
+        cuboids(input).mapNotNull { (cmd, cuboid) ->
+            cuboid.intersect(Cuboid(-50..50, -50..50, -50..50))?.let {
+                cmd to it
+            }
+        }.forEach { (cmd, cube) ->
+            if (cmd == "on") {
+                on = cube + on
+            } else {
+                on = on.flatMap { it - cube }.toSet()
             }
         }
-        var c = 0
-        val rebootSteps = cuboids.reduce { cubes, cube ->
-            if (cube.first == "on") {
-                "" to cubes.second.union(cube.second)
-            } else {
-                "" to cubes.second.minus(cube.second)
-            }
-        }.second
-        return rebootSteps.size
+        return on.sumOf { it.size }
     }
+
 
     fun part2(input: List<String>): Long {
 
-        val cuboids = input.map { row ->
-            row.split(" ").let { (command, cubes) ->
-                command to cubes.split(",").let { (xRange, yRange, zRange) ->
-                    Cuboid(
-                        xRange.replace("x=", "").split("..").let { (start, end) ->
-                            min(start.toInt(), end.toInt())..max(start.toInt(), end.toInt())
-                        },
-                        yRange.replace("y=", "").split("..").let { (start, end) ->
-                            min(start.toInt(), end.toInt())..max(start.toInt(), end.toInt())
-                        },
-                        zRange.replace("z=", "").split("..").let { (start, end) ->
-                            min(start.toInt(), end.toInt())..max(start.toInt(), end.toInt())
-                        }
-                    )
-                }
-            }
-        }
-/*
-        cuboids = listOf(
-            "on" to Cuboid(0..3, 0..3, 0..3),
-            "on" to Cuboid(1..4, 1..4, 1..4),
-            "off" to Cuboid(0..9, 0..10, 0..10),
-            "on" to Cuboid(11..100, 0..10, 0..10),
-            "off" to Cuboid(-10..0, 0..10, 0..10)
-        )*/
         var on = emptySet<Cuboid>()
-        cuboids.forEach { (cmd, cube) ->
+        cuboids(input).forEach { (cmd, cube) ->
             if (cmd == "on") {
-                on = cube.plus(on)
+                on = cube + on
             } else {
-                on = on.flatMap {
-                    it.minus(cube)
-                }.toSet()
+                on = on.flatMap { it - cube }.toSet()
             }
         }
         return on.sumOf { it.size }
@@ -320,17 +267,17 @@ fun main() {
     val input = readInput("day22/Day22")
 
     println(part1(testInput))
-    check(part1(testInput) == 39)
+    check(part1(testInput) == 39L)
 
     println(part1(testInput2))
-    check(part1(testInput2) == 590784)
+    check(part1(testInput2) == 590784L)
 
-    val solutionPart1: Int
+    val solutionPart1: Long
     val msPart1 = measureTimeMillis {
         solutionPart1 = part1(input)
     }
     println("$solutionPart1 ($msPart1 ms)")
-    check(solutionPart1 == 591365)
+    check(solutionPart1 == 591365L)
 
 
     println(part2(testInput3))
