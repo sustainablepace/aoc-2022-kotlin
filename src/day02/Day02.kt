@@ -1,72 +1,81 @@
 package day02
 
-import day02.Direction.*
+import day02.Shape.*
+import day02.Result.*
 import readInput
 
-typealias PlannedCourse = List<Command>
-
-fun List<String>.plannedCourse(): PlannedCourse = map { Command.create(it) }
-fun PlannedCourse.follow() = fold(Position()) { position, command -> position.follow(command) }
-fun PlannedCourse.followNewInterpretation() = fold(CorrectPosition()) { position, command -> position.follow(command) }
-
-data class Command(
-    val direction: Direction,
-    val x: Int
-) {
-    companion object {
-        fun create(command: String): Command = command.split(' ').let { params ->
-            assert(params.size == 2)
-            val direction = when(params[0]) {
-                "forward" -> FORWARD
-                "down" -> DOWN
-                "up" -> UP
-                else -> throw java.lang.IllegalArgumentException("Invalid direction ${params[0]}")
-            }
-            Command(direction, params[1].toInt())
-        }
-    }
+enum class Shape(val score: Int) {
+    Rock(1), Paper(2), Scissors(3)
 }
 
-enum class Direction {
-    FORWARD, UP, DOWN
+enum class Result(val score:Int) {
+    Win(6), Draw(3), Loss(0)
 }
 
-data class Position(
-    val horizontalPosition: Int = 0,
-    val depth: Int = 0
-) {
-    fun follow(command: Command): Position = when (command.direction) {
-        FORWARD -> Position(horizontalPosition + command.x, depth)
-        UP -> Position(horizontalPosition, depth - command.x)
-        DOWN -> Position(horizontalPosition, depth + command.x)
-    }
-    fun result(): Int = horizontalPosition * depth
+fun Shape.beats() = when(this) {
+    Rock -> Scissors
+    Paper -> Rock
+    Scissors -> Paper
 }
 
-data class CorrectPosition(
-    val horizontalPosition: Int = 0,
-    val depth: Int = 0,
-    val aim: Int = 0
-) {
-    fun follow(command: Command): CorrectPosition = when (command.direction) {
-        FORWARD -> CorrectPosition(horizontalPosition + command.x, depth + aim * command.x, aim)
-        UP -> CorrectPosition(horizontalPosition, depth, aim - command.x)
-        DOWN -> CorrectPosition(horizontalPosition, depth, aim + command.x)
-    }
-    fun result(): Int = horizontalPosition * depth
+fun Shape.losesTo() = when(this) {
+    Rock -> Paper
+    Paper -> Scissors
+    Scissors -> Rock
+}
+
+fun Shape.reactionFor(result: Result) = when(result) {
+    Win -> losesTo()
+    Draw -> this
+    Loss -> beats()
+}
+
+infix fun Shape.vs(other: Shape) = when {
+    this == other -> Draw
+    other == this.beats() -> Win
+    else -> Loss
+}
+
+fun rockPaperScissorsPart1(input: String) = when (input) {
+    "A", "X" -> Rock
+    "B", "Y" -> Paper
+    else -> Scissors
+}
+
+fun rockPaperScissorsPart2(input: String) = when (input) {
+    "A" -> Rock
+    "B" -> Paper
+    else -> Scissors
+}
+
+fun rockPaperScissorsResult(input: String) = when(input) {
+    "X" -> Loss
+    "Y" -> Draw
+    else -> Win
 }
 
 fun main() {
-    fun part1(input: List<String>): Position = input.plannedCourse().follow()
+    fun part1(input: List<String>): Int = input.map {
+        it.split(" ")
+            .map { rockPaperScissorsPart1(it) }
+            .let { list -> list[0] to list[1] }
+    }.sumOf { (elf, me) ->
+        me.score + (me vs elf).score
+    }
 
-    fun part2(input: List<String>): CorrectPosition = input.plannedCourse().followNewInterpretation()
+    fun part2(input: List<String>): Int = input.map {
+        it.split(" ")
+            .let { list -> rockPaperScissorsPart2(list[0]) to rockPaperScissorsResult(list[1]) }
+    }.sumOf { (elf, result) ->
+        result.score + elf.reactionFor(result).score
+    }
 
     val testInput = readInput("day02/Day02_test")
-    check(part1(testInput).result() == 150)
-
     val input = readInput("day02/Day02")
-    println(part1(input).result())
 
-    check(part2(testInput).result() == 900)
-    println(part2(input).result())
+    check(part1(testInput) == 15)
+    println(part1(input))
+
+    check(part2(testInput) == 12)
+    println(part2(input))
 }
