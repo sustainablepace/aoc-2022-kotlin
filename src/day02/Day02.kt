@@ -1,39 +1,42 @@
 package day02
 
 import day02.Shape.*
-import day02.Result.*
+import day02.Outcome.*
 import readInput
 
 enum class Shape(val score: Int) {
     Rock(1), Paper(2), Scissors(3)
 }
 
-enum class Result(val score:Int) {
+infix fun Shape.vs(other: Shape) = RockPaperScissors(this, other)
+
+data class RockPaperScissors(val mine: Shape, val elf: Shape) {
+    fun play() = when {
+        mine == elf -> Draw
+        wins.any { it == this } -> Win
+        else -> Loss
+    }
+
+    override fun toString() = "$mine vs $elf => ${play()}"
+
+    companion object {
+        val wins = setOf<RockPaperScissors>(
+            Rock vs Scissors,
+            Scissors vs Paper,
+            Paper vs Rock
+        )
+    }
+}
+
+
+enum class Outcome(val score:Int) {
     Win(6), Draw(3), Loss(0)
 }
 
-fun Shape.beats() = when(this) {
-    Rock -> Scissors
-    Paper -> Rock
-    Scissors -> Paper
-}
-
-fun Shape.losesTo() = when(this) {
-    Rock -> Paper
-    Paper -> Scissors
-    Scissors -> Rock
-}
-
-fun Shape.reactionFor(result: Result) = when(result) {
-    Win -> losesTo()
+fun Shape.reactionForOutcome(outcome: Outcome) = when(outcome) {
+    Win -> RockPaperScissors.wins.first { it.elf == this }.mine
+    Loss -> RockPaperScissors.wins.first { it.mine == this }.elf
     Draw -> this
-    Loss -> beats()
-}
-
-infix fun Shape.vs(other: Shape) = when {
-    this == other -> Draw
-    other == this.beats() -> Win
-    else -> Loss
 }
 
 fun rockPaperScissorsPart1(input: String) = when (input) {
@@ -60,22 +63,24 @@ fun main() {
             .map { rockPaperScissorsPart1(it) }
             .let { list -> list[0] to list[1] }
     }.sumOf { (elf, me) ->
-        me.score + (me vs elf).score
+        (me vs elf).run {
+            mine.score + play().score
+        }
     }
 
     fun part2(input: List<String>): Int = input.map {
         it.split(" ")
             .let { list -> rockPaperScissorsPart2(list[0]) to rockPaperScissorsResult(list[1]) }
     }.sumOf { (elf, result) ->
-        result.score + elf.reactionFor(result).score
+        result.score + elf.reactionForOutcome(result).score
     }
 
     val testInput = readInput("day02/Day02_test")
     val input = readInput("day02/Day02")
 
-    check(part1(testInput) == 15)
-    println(part1(input))
+    check(part1(testInput).also { println(it) } == 15)
+    check(part1(input).also { println(it) } == 15422)
 
-    check(part2(testInput) == 12)
-    println(part2(input))
+    check(part2(testInput).also { println(it) } == 12)
+    check(part2(input).also { println(it) } == 15442)
 }
