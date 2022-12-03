@@ -2,38 +2,32 @@ package day03
 
 import readInput
 
-typealias Rucksack = Pair<Compartment, Compartment>
-typealias Compartment = String
 typealias ItemType = Char
+fun ItemType.priority() = if (isUpperCase()) code - 65 + 27 else code - 97 + 1
 
-fun ItemType.priority() = if (isUpperCase()) {
-    code - 65 + 27
-} else {
-    code - 97 + 1
-}
+typealias Compartment = Set<ItemType>
 
-fun Rucksack.findDuplicate() = first.toSet().intersect(second.toSet()).first()
+typealias MultiCompartmentRucksack = List<Compartment>
+fun MultiCompartmentRucksack.findDuplicate() = reduce { acc, cur -> acc.intersect(cur) }.first()
+fun String.twoCompartmentRucksack(): MultiCompartmentRucksack = listOf(
+    slice(0 until length / 2).toSet(),
+    slice(length / 2 until length).toSet()
+)
+
+typealias SingleCompartmentRucksack = Compartment
+fun String.singleCompartmentRucksack(): SingleCompartmentRucksack = toSet()
 
 fun main() {
-    fun part1(input: List<String>): Int = input.map { line ->
-        val half = line.length / 2
-        line.slice(0 until half) to
-                line.slice(half until line.length)
-    }.map { rucksack: Rucksack ->
-        rucksack.findDuplicate()
-    }.sumOf {
-        it.priority()
-    }
+    fun part1(input: List<String>): Int = input
+        .map(String::twoCompartmentRucksack)
+        .map(MultiCompartmentRucksack::findDuplicate)
+        .sumOf(ItemType::priority)
 
-    fun part2(input: List<String>): Int = input.chunked(3).flatMap { group ->
-        group.map {
-            it.toSet()
-        }.reduce { acc, elfInGroup ->
-            acc.intersect(elfInGroup)
-        }
-    }.sumOf {
-        it.priority()
-    }
+    fun part2(input: List<String>): Int = input
+        .map(String::singleCompartmentRucksack)
+        .chunked(3)
+        .map(List<SingleCompartmentRucksack>::findDuplicate)
+        .sumOf(ItemType::priority)
 
     val testInput = readInput("day03/Day03_test")
     val input = readInput("day03/Day03")
