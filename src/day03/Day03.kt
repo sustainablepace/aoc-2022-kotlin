@@ -2,69 +2,45 @@ package day03
 
 import readInput
 
-typealias BinaryNumber = String
-fun BinaryNumber.toDecimal() = toInt(2)
+typealias Rucksack = Pair<Compartment, Compartment>
+typealias Compartment = String
+typealias ItemType = Char
 
-typealias Pos = Int
-
-@JvmInline
-value class DiagnosticReport(private val binaryNumbers: List<BinaryNumber>) {
-
-    fun powerConsumption(): Int = gammaRate() * epsilonRate()
-    fun lifeSupportRating(): Int = oxygenGeneratorRating() * co2ScrubberRating()
-
-    private fun countOnesAt(i: Pos) = binaryNumbers.count { binaryNumber -> binaryNumber[i] == '1' }
-
-    private fun mostCommonBitAt(i: Pos): Char =
-        countOnesAt(i).let { numberOfOnes -> if(numberOfOnes >= binaryNumbers.size - numberOfOnes) '1' else '0' }
-
-    private fun leastCommonBitAt(i: Pos): Char = if(mostCommonBitAt(i) == '1') '0' else '1'
-
-    private fun binaryNumberLength() = binaryNumbers.maxOf { it.length }
-
-    private fun gammaRate(): Int =
-        (0 until binaryNumberLength()).map { mostCommonBitAt(it) }.joinToString("").toDecimal()
-
-    private fun epsilonRate(): Int =
-        (0 until binaryNumberLength()).map { leastCommonBitAt(it) }.joinToString("").toDecimal()
-
-    private fun toDecimal(): Int = binaryNumbers.first().toDecimal()
-
-    private fun oxygenGeneratorRatingFilter(i: Pos = 0): DiagnosticReport =
-        binaryNumbers.filter { binaryNumber ->
-            binaryNumber[i] == mostCommonBitAt(i)
-        }.let { filteredReport ->
-            if (filteredReport.size == 1) {
-                DiagnosticReport(filteredReport)
-            } else {
-                DiagnosticReport(filteredReport).oxygenGeneratorRatingFilter(i + 1)
-            }
-        }
-
-    private fun co2ScrubberRatingFilter(i: Pos = 0): DiagnosticReport =
-        binaryNumbers.filter { binaryNumber ->
-            binaryNumber[i] == leastCommonBitAt(i)
-        }.let { filteredReport ->
-            if (filteredReport.size == 1) {
-                DiagnosticReport(filteredReport)
-            } else {
-                DiagnosticReport(filteredReport).co2ScrubberRatingFilter(i + 1)
-            }
-        }
-
-    private fun oxygenGeneratorRating() = oxygenGeneratorRatingFilter().toDecimal()
-    private fun co2ScrubberRating() = co2ScrubberRatingFilter().toDecimal()
+fun ItemType.priority() = if (isUpperCase()) {
+    code - 65 + 27
+} else {
+    code - 97 + 1
 }
 
+fun Rucksack.findDuplicate() = first.toSet().intersect(second.toSet()).first()
 
 fun main() {
-    // test if implementation meets criteria from the description, like:
+    fun part1(input: List<String>): Int = input.map { line ->
+        val half = line.length / 2
+        line.slice(0 until half) to
+                line.slice(half until line.length)
+    }.map { rucksack: Rucksack ->
+        rucksack.findDuplicate()
+    }.sumOf {
+        it.priority()
+    }
+
+    fun part2(input: List<String>): Int = input.chunked(3).flatMap { group ->
+        group.map {
+            it.toSet()
+        }.reduce { acc, elfInGroup ->
+            acc.intersect(elfInGroup)
+        }
+    }.sumOf {
+        it.priority()
+    }
+
     val testInput = readInput("day03/Day03_test")
-    check(DiagnosticReport(testInput).powerConsumption() == 198)
-
     val input = readInput("day03/Day03")
-    println(DiagnosticReport(input).powerConsumption())
 
-    check(DiagnosticReport(testInput).lifeSupportRating() == 230)
-    println(DiagnosticReport(input).lifeSupportRating())
+    check(part1(testInput).also { println(it) } == 157)
+    check(part1(input).also { println(it) } == 7553)
+
+    check(part2(testInput).also { println(it) } == 70)
+    check(part2(input).also { println(it) } == 2758)
 }

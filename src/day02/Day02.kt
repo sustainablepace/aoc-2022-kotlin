@@ -2,6 +2,7 @@ package day02
 
 import day02.Shape.*
 import day02.Outcome.*
+import day02.RockPaperScissors.Companion.wins
 import readInput
 
 enum class Shape(val score: Int) {
@@ -34,8 +35,8 @@ enum class Outcome(val score:Int) {
 }
 
 fun Shape.reactionForOutcome(outcome: Outcome) = when(outcome) {
-    Win -> RockPaperScissors.wins.first { it.elf == this }.mine
-    Loss -> RockPaperScissors.wins.first { it.mine == this }.elf
+    Win -> wins.first { it.elf == this }.mine
+    Loss -> wins.first { it.mine == this }.elf
     Draw -> this
 }
 
@@ -61,11 +62,9 @@ fun main() {
     fun part1(input: List<String>): Int = input.map {
         it.split(" ")
             .map { rockPaperScissorsPart1(it) }
-            .let { list -> list[0] to list[1] }
-    }.sumOf { (elf, me) ->
-        (me vs elf).run {
-            mine.score + play().score
-        }
+            .let { (elf, me) -> me vs elf }
+    }.sumOf {
+        it.mine.score + it.play().score
     }
 
     fun part2(input: List<String>): Int = input.map {
