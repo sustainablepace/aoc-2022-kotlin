@@ -8,7 +8,7 @@ fun ItemType.priority() = if (isUpperCase()) code - 65 + 27 else code - 97 + 1
 typealias Compartment = Set<ItemType>
 
 typealias MultiCompartmentRucksack = List<Compartment>
-fun MultiCompartmentRucksack.findDuplicate() = reduce { acc, cur -> acc.intersect(cur) }.first()
+fun MultiCompartmentRucksack.duplicateItemType() = reduce { acc, cur -> acc.intersect(cur) }.first()
 fun String.twoCompartmentRucksack(): MultiCompartmentRucksack = listOf(
     slice(0 until length / 2).toSet(),
     slice(length / 2 until length).toSet()
@@ -20,13 +20,13 @@ fun String.singleCompartmentRucksack(): SingleCompartmentRucksack = toSet()
 fun main() {
     fun part1(input: List<String>): Int = input
         .map(String::twoCompartmentRucksack)
-        .map(MultiCompartmentRucksack::findDuplicate)
+        .map(MultiCompartmentRucksack::duplicateItemType)
         .sumOf(ItemType::priority)
 
     fun part2(input: List<String>): Int = input
         .map(String::singleCompartmentRucksack)
         .chunked(3)
-        .map(List<SingleCompartmentRucksack>::findDuplicate)
+        .map(List<SingleCompartmentRucksack>::duplicateItemType)
         .sumOf(ItemType::priority)
 
     val testInput = readInput("day03/Day03_test")
