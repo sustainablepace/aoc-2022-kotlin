@@ -1,11 +1,11 @@
 package day06
 
 import readInput
-import kotlin.system.measureTimeMillis
 
 typealias Message = String
-fun Message.firstStartOfPacketMarker() = windowed(4, 1).indexOfFirst { it.toSet().size == 4} + 4
-fun Message.firstStartOfMessageMarker() = windowed(14, 1).indexOfFirst { it.toSet().size == 14} + 14
+
+fun Message.firstStartOfPacketMarker() = windowed(4, 1).indexOfFirst { it.toSet().size == 4 } + 4
+fun Message.firstStartOfMessageMarker() = windowed(14, 1).indexOfFirst { it.toSet().size == 14 } + 14
 
 fun main() {
     fun part1(input: List<String>): Int = input.first().firstStartOfPacketMarker()
