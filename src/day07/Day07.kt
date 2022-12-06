@@ -7,41 +7,15 @@ import kotlin.math.abs
 import kotlin.system.measureTimeMillis
 
 fun main() {
-    fun part1(input: List<String>): Int {
-        val crabs = input.first().split(",").map { it.toInt() }
-        return min((min(crabs)..max(crabs)).map { pos ->
-            crabs.sumOf { abs(it - pos) }
-        })
-    }
-
-    fun part2(input: List<String>): Int {
-        val crabs = input.first().split(",").map { it.toInt() }
-        return min((min(crabs)..max(crabs)).map { pos ->
-            crabs.sumOf { abs(it - pos).let { n -> n * (n + 1) / 2 } }
-        })
-    }
+    fun part1(input: List<String>): Int = TODO()
+    fun part2(input: List<String>): Int = TODO()
 
     val testInput = readInput("day07/Day07_test")
     val input = readInput("day07/Day07")
 
-    println(part1(testInput))
-    check(part1(testInput) == 37)
+    check(part1(testInput).also { println(it) } == TODO())
+    check(part1(input).also { println(it) } == TODO())
 
-    val solutionPart1: Int
-    val msPart1 = measureTimeMillis {
-        solutionPart1 = part1(input)
-    }
-    println("$solutionPart1 ($msPart1 ms)")
-    check(solutionPart1 == 352254)
-
-    println(part2(testInput))
-    check(part2(testInput) == 168)
-
-    val solutionPart2: Int
-    val msPart2 = measureTimeMillis {
-        solutionPart2 = part2(input)
-    }
-    println("$solutionPart2 ($msPart2 ms)")
-    check(solutionPart2 == 99053143)
-
+    check(part2(testInput).also { println(it) } == TODO())
+    check(part2(input).also { println(it) } == TODO())
 }
