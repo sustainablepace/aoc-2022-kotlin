@@ -19,31 +19,40 @@ class Directory(
         return l.toList()
     }
 
-    fun rootDirectory(): Directory = if (parent !== null) { parent.rootDirectory() } else this
+    fun rootDirectory(): Directory = if (parent !== null) {
+        parent.rootDirectory()
+    } else this
 }
 
 fun List<String>.filesystem(): Directory {
     var currentDirectory = Directory(null, "/")
     forEach { line ->
-        if (line.startsWith("$")) {
-            line.substring(2).let {
-                if (it.startsWith("cd")) {
-                    val newDir = it.substring(3)
-                    currentDirectory = if (newDir == "/") {
-                        currentDirectory.rootDirectory()
-                    } else if (newDir == "..") {
-                        currentDirectory.parent!!
-                    } else {
-                        currentDirectory.directories.first { it.name.endsWith("$newDir/") }
-                    }
+        if (line.startsWith("$ ls")) {
+            // ignore
+        } else if (line.startsWith("$ cd")) {
+            line.substring(5).let { newDir ->
+                currentDirectory = when (newDir) {
+                    "/" -> currentDirectory.rootDirectory()
+                    ".." -> currentDirectory.parent!!
+                    else -> currentDirectory.directories.first { it.name.endsWith("$newDir/") }
                 }
             }
         } else {
-            line.split(" ").let { (a, b) ->
-                if (a == "dir") {
-                    currentDirectory.directories.add(Directory(parent = currentDirectory, name = currentDirectory.name + b + "/"))
+            line.split(" ").let { (left, right) ->
+                if (left == "dir") {
+                    currentDirectory.directories.add(
+                        Directory(
+                            parent = currentDirectory,
+                            name = currentDirectory.name + right + "/"
+                        )
+                    )
                 } else {
-                    currentDirectory.files.add(File(name = b, size = a.toLong()))
+                    currentDirectory.files.add(
+                        File(
+                            name = right,
+                            size = left.toLong()
+                        )
+                    )
                 }
             }
         }
