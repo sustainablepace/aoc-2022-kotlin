@@ -44,6 +44,14 @@ fun Droplet.hull() = box().let { box ->
     }.toSet()
 }
 
+fun Droplet.box(): Droplet = (minBy { it.first }.first - 1 until maxBy { it.first }.first + 2).flatMap { x ->
+    (minBy { it.second }.second - 1 until maxBy { it.second }.second + 2).flatMap { y ->
+        (minBy { it.third }.third - 1 until maxBy { it.third }.third + 2).map { z ->
+            Triple(x, y, z)
+        }
+    }
+}.toSet()
+
 fun Droplet.openSidesWithoutPockets(): Int {
     val potentialAirPockets = box().minus(this).toMutableList()
     val surroundingAirPockets = hull().toMutableSet()
@@ -62,14 +70,6 @@ fun Droplet.openSidesWithoutPockets(): Int {
 
     return openSides() - potentialAirPockets.toSet().openSides()
 }
-
-fun Droplet.box(): Droplet = (minBy { it.first }.first - 1 until maxBy { it.first }.first + 2).flatMap { x ->
-    (minBy { it.second }.second - 1 until maxBy { it.second }.second + 2).flatMap { y ->
-        (minBy { it.third }.third - 1 until maxBy { it.third }.third + 2).map { z ->
-            Triple(x, y, z)
-        }
-    }
-}.toSet()
 
 fun main() {
     fun part1(input: List<String>): Int = input.droplet().openSides()
