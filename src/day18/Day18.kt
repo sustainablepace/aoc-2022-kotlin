@@ -1,260 +1,86 @@
 package day18
 
-import com.fasterxml.jackson.databind.JsonNode
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.databind.node.ArrayNode
-import com.fasterxml.jackson.databind.node.IntNode
 import readInput
-import java.lang.IllegalArgumentException
-import java.util.*
-import kotlin.math.ceil
-import kotlin.math.floor
-import kotlin.system.measureTimeMillis
+import kotlin.math.abs
 
-sealed class SnailfishNumber {
-    abstract val id: UUID
-    abstract val depth: Int
-    operator fun plus(other: SnailfishNumber): SnailfishNumber =
-        SnailfishNumberPair(mutableListOf(this.increaseDepth(), other.increaseDepth()), 0)
+typealias Droplet = Set<Cube>
+typealias Cube = Triple<Int, Int, Int>
 
-    abstract fun increaseDepth(): SnailfishNumber
-    abstract fun toList(): List<SnailfishNumber>
-    abstract fun contains(explosion: SnailfishNumberPair): Boolean
-    abstract fun split(): Boolean
-    abstract fun reduce(): SnailfishNumber
-    abstract fun containsNumberGreater9(): Boolean
-    abstract fun magnitude(): Int
-    abstract fun replaceLeft(explosion: SnailfishNumberPair)
-}
-
-data class SnailfishNumberAtomic(
-    var value: Int,
-    override val depth: Int,
-    override val id: UUID = UUID.randomUUID()
-) : SnailfishNumber() {
-    override fun increaseDepth(): SnailfishNumber = copy(depth = depth + 1)
-    override fun toList(): List<SnailfishNumber> = emptyList()
-    override fun contains(explosion: SnailfishNumberPair): Boolean = false
-    override fun split(): Boolean = false
-    override fun reduce(): SnailfishNumber = this
-    override fun containsNumberGreater9(): Boolean = value > 9
-    override fun magnitude(): Int = value
-    override fun replaceLeft(explosion: SnailfishNumberPair) {
-        val pair0Value = (explosion.pair[0] as SnailfishNumberAtomic).value
-        value += pair0Value
-    }
-
-    override fun toString() = "$value"
-
-}
-
-data class SnailfishNumberPair(
-    var pair: MutableList<SnailfishNumber>,
-    override val depth: Int,
-    override val id: UUID = UUID.randomUUID()
-) : SnailfishNumber() {
-
-    override fun split() =
-        pair.indexOfFirst {
-            it.containsNumberGreater9()
-        }.let { index ->
-            if (index == -1) {
-                false
-            } else if (index >= 0 && pair[index] is SnailfishNumberPair) {
-                pair[0].split() || pair[1].split()
-            } else {
-                pair[index] = SnailfishNumberPair(
-                    pair = mutableListOf(
-                        SnailfishNumberAtomic(
-                            value = floor((pair[index] as SnailfishNumberAtomic).value.toDouble() / 2).toInt(),
-                            depth = pair[index].depth + 1
-                        ),
-                        SnailfishNumberAtomic(
-                            value = ceil((pair[index] as SnailfishNumberAtomic).value.toDouble() / 2).toInt(),
-                            depth = pair[index].depth + 1
-                        )
-                    ),
-                    depth = pair[index].depth
-                )
-                true
-            }
-        }
-
-    override fun contains(explosion: SnailfishNumberPair) = this == explosion || pair.any { it.contains(explosion) }
-
-    override fun containsNumberGreater9() = pair.any { it.containsNumberGreater9() }
-
-    override fun toString() = "[${pair[0]},${pair[1]}]"
-
-    override fun magnitude() = 3 * pair[0].magnitude() + 2 * pair[1].magnitude()
-
-    override fun increaseDepth() = copy(
-        pair = pair.map { it.increaseDepth() }.toMutableList(),
-        depth = depth + 1
+fun Cube.neighbours(): List<Cube> = toList().flatMapIndexed { index: Int, i: Int ->
+    listOf(
+        toList().toMutableList().also { it[index] = i - 1 }.toList(),
+        toList().toMutableList().also { it[index] = i + 1 }.toList()
     )
+}.map { it.toCube() }
 
-    override fun toList(): List<SnailfishNumber> =
-        when {
-            pair[0] is SnailfishNumberAtomic && pair[1] is SnailfishNumberAtomic -> listOf(this)
-            pair[0] is SnailfishNumberAtomic -> listOf(this) + pair[1].toList()
-            pair[1] is SnailfishNumberAtomic -> pair[0].toList() + listOf(this)
-            else -> pair[0].toList() + pair[1].toList()
-        }
-
-    override fun reduce(): SnailfishNumber {
-        val start = this.toString()
-        var old: String
-        var number = this
-        do {
-            old = number.toString()
-            number = number.explode()
-        } while (old != number.toString())
-
-        number.split()
-
-        return if (number.toString() == start) {
-            number
-        } else {
-            number.reduce()
-        }
-    }
-
-    override fun replaceLeft(explosion: SnailfishNumberPair) {
-        val pair0Value = (explosion.pair[0] as SnailfishNumberAtomic).value
-        if (pair[1].contains(explosion) && pair[0] is SnailfishNumberAtomic) {
-            (pair[0] as SnailfishNumberAtomic).value += pair0Value
-        } else {
-            (pair[1] as SnailfishNumberAtomic).value += pair0Value
-        }
-    }
-
-    private fun replaceRight(explosion: SnailfishNumberPair) {
-        val pair1value = (explosion.pair[1] as SnailfishNumberAtomic).value
-        if (pair[0].contains(explosion)) {
-            if (pair[1] is SnailfishNumberAtomic) {
-                (pair[1] as SnailfishNumberAtomic).value += pair1value
-            } else {
-                (pair[0] as SnailfishNumberAtomic).value += pair1value
-            }
-        } else {
-            if (pair[0] is SnailfishNumberAtomic) {
-                (pair[0] as SnailfishNumberAtomic).value += pair1value
-            } else {
-                (pair[1] as SnailfishNumberAtomic).value += pair1value
-            }
-        }
-    }
-
-    private fun explode() =
-        toList().let { list ->
-            list.firstOrNull {
-                it.depth >= 4 && it is SnailfishNumberPair && it.pair.all { number -> number is SnailfishNumberAtomic }
-            }?.let { explosion ->
-                explosion as SnailfishNumberPair
-            }?.let { explosion ->
-                list.indexOf(explosion).let { explosionIndex ->
-                    list.getOrNull(explosionIndex - 1)?.replaceLeft(explosion)
-                    list.getOrNull(explosionIndex + 1)?.let { it as SnailfishNumberPair }?.replaceRight(explosion)
-                }
-                replaceExplosion(explosion)
-            } ?: this
-        }
-
-    private fun replaceExplosion(explosion: SnailfishNumberPair): SnailfishNumberPair =
-        copy(
-            pair = pair.map {
-                when (it) {
-                    is SnailfishNumberAtomic -> it
-                    is SnailfishNumberPair -> when (explosion) {
-                        it.pair[0] -> it.copy(
-                            pair = mutableListOf(SnailfishNumberAtomic(0, it.depth + 1), it.pair[1])
-                        )
-                        it.pair[1] -> it.copy(
-                            pair = mutableListOf(it.pair[0], SnailfishNumberAtomic(0, it.depth + 1))
-                        )
-                        else -> it.replaceExplosion(explosion)
-                    }
-                }
-            }.toMutableList()
-        )
+fun List<Int>.toCube() = take(3).run {
+    Triple(get(0), get(1), get(2))
 }
 
-val objectMapper = ObjectMapper()
+fun List<String>.droplet(): Droplet = map { line ->
+    line.split(",").map { it.toInt() }.toCube()
+}.toSet()
 
-fun ArrayNode.parse(depth: Int = 0): SnailfishNumberPair =
-    map {
-        when (it) {
-            is ArrayNode -> it.parse(depth + 1)
-            is IntNode -> SnailfishNumberAtomic(it.intValue(), depth + 1)
-            else -> throw IllegalArgumentException("Not a valid Snailfish number")
+fun Droplet.openSides(): Int = sumOf { cube ->
+    cube.neighbours().count { neighbour: Cube -> this.none { it == neighbour } }
+}
+
+fun Cube.isNeighbourOf(cube: Cube): Boolean =
+    abs(cube.first - first) == 1 && cube.second == second && cube.third == third ||
+            cube.first == first && abs(cube.second - second) == 1 && cube.third == third ||
+            cube.first == first && cube.second == second && abs(cube.third - third) == 1
+
+fun Droplet.hull() = box().let { box ->
+    val maxX = box.maxBy { it.first }.first
+    val minX = box.minBy { it.first }.first
+    val maxY = box.maxBy { it.second }.second
+    val minY = box.minBy { it.second }.second
+    val maxZ = box.maxBy { it.third }.third
+    val minZ = box.minBy { it.third }.third
+    box.mapNotNull {
+        it.takeIf { cube ->
+            cube.first == maxX || cube.first == minX || cube.second == maxY || cube.second == minY || cube.third == maxZ || cube.third == minZ
         }
-    }.let {
-        SnailfishNumberPair(mutableListOf(it[0], it[1]), depth)
-    }
+    }.toSet()
+}
 
-fun List<ArrayNode>.parse(): SnailfishNumber =
-    map { it.parse() }.reduce { a1, a2 -> (a1 + a2).reduce() as SnailfishNumberPair }
+fun Droplet.openSidesWithoutPockets(): Int {
+    val potentialAirPockets = box().minus(this).toMutableList()
+    val surroundingAirPockets = hull().toMutableSet()
+    var newSurroundingAirCubes: Set<Cube>
+
+    do {
+        newSurroundingAirCubes = potentialAirPockets.flatMap { cube ->
+            if (surroundingAirPockets.any { it.isNeighbourOf(cube) }) {
+                listOf(cube)
+            } else emptyList()
+        }.toSet()
+        surroundingAirPockets.addAll(newSurroundingAirCubes)
+        potentialAirPockets.removeAll(newSurroundingAirCubes)
+
+    } while (newSurroundingAirCubes.isNotEmpty())
+
+    return openSides() - potentialAirPockets.toSet().openSides()
+}
+
+fun Droplet.box(): Droplet = (minBy { it.first }.first - 1 until maxBy { it.first }.first + 2).flatMap { x ->
+    (minBy { it.second }.second - 1 until maxBy { it.second }.second + 2).flatMap { y ->
+        (minBy { it.third }.third - 1 until maxBy { it.third }.third + 2).map { z ->
+            Triple(x, y, z)
+        }
+    }
+}.toSet()
 
 fun main() {
-    fun part1(number: SnailfishNumber): Int = number.magnitude()
+    fun part1(input: List<String>): Int = input.droplet().openSides()
+    fun part2(input: List<String>): Int = input.droplet().openSidesWithoutPockets()
 
-    fun part2(numbers: List<ArrayNode>): Int =
-        numbers.map { it.parse() }.let { parsedNumbers ->
-            parsedNumbers.flatMap { number1 ->
-                parsedNumbers.map { number2 ->
-                    number1 to number2
-                }
-            }.maxOf { (number1, number2) ->
-                (number1 + number2).reduce().magnitude()
-            }
-        }
+    val testInput = readInput("day18/Day18_test")
+    val input = readInput("day18/Day18")
 
-    val testInput1 = readInput("day18/Day18_test_1").map {
-        objectMapper.readValue(it, JsonNode::class.java) as ArrayNode
-    }.parse()
-    val testInput2 = readInput("day18/Day18_test_2").map {
-        objectMapper.readValue(it, JsonNode::class.java) as ArrayNode
-    }.parse()
-    val testInput3 = readInput("day18/Day18_test_3").map {
-        objectMapper.readValue(it, JsonNode::class.java) as ArrayNode
-    }.parse()
-    val testInput4 = readInput("day18/Day18_test_4").map {
-        objectMapper.readValue(it, JsonNode::class.java) as ArrayNode
-    }.parse()
-    val testInput5 = readInput("day18/Day18_test_5").map {
-        objectMapper.readValue(it, JsonNode::class.java) as ArrayNode
-    }.parse()
+    check(part1(testInput).also { println(it) } == 64)
+    check(part1(input).also { println(it) } == 3496)
 
-    assert(testInput1.toString() == "[[[[1,1],[2,2]],[3,3]],[4,4]]")
-    assert(testInput2.toString() == "[[[[3,0],[5,3]],[4,4]],[5,5]]")
-    assert(testInput3.toString() == "[[[[5,0],[7,4]],[5,5]],[6,6]]")
-    assert(testInput4.toString() == "[[[[8,7],[7,7]],[[8,6],[7,7]]],[[[0,7],[6,6]],[8,7]]]")
-    assert(testInput5.toString() == "[[[[6,6],[7,6]],[[7,7],[7,0]]],[[[7,7],[7,7]],[[7,8],[9,9]]]]")
-
-    val testInput = readInput("day18/Day18_test").map {
-        objectMapper.readValue(it, JsonNode::class.java) as ArrayNode
-    }
-    val input = readInput("day18/Day18").map {
-        objectMapper.readValue(it, JsonNode::class.java) as ArrayNode
-    }
-
-    println(part1(testInput.parse()))
-    check(part1(testInput.parse()) == 4140)
-
-    val solutionPart1: Int
-    val msPart1 = measureTimeMillis {
-        solutionPart1 = part1(input.parse())
-    }
-    println("$solutionPart1 ($msPart1 ms)")
-    check(solutionPart1 == 3574)
-
-    println(part2(testInput))
-    check(part2(testInput) == 3993)
-
-    val solutionPart2: Int
-    val msPart2 = measureTimeMillis {
-        solutionPart2 = part2(input)
-    }
-    println("$solutionPart2 ($msPart2 ms)")
-    check(solutionPart2 == 4763)
+    check(part2(testInput).also { println(it) } == 58)
+    check(part2(input).also { println(it) } == 2064)
 }
