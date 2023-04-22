@@ -2,68 +2,91 @@ package day11
 
 import readInput
 
-interface I {
-    fun worryLevelDivisibleBy(divisor: Int): Boolean
-    fun worryLevel(): Long
-    fun add(num: Long): I
-    fun mul(num: Long): I
+interface Item {
+    fun getRemainder(divisor: Divisor): Long
+    fun add(num: Item): Item
+    fun mul(num: Item): Item
+    fun add(num: Long): Item
+    fun mul(num: Long): Item
 }
 
 @JvmInline
-value class Item(private val worryLevel: Long) : I {
-    override fun worryLevelDivisibleBy(divisor: Int) = worryLevel % divisor == 0L
-    override fun worryLevel(): Long = worryLevel
-    override fun add(num: Long): Item = Item(worryLevel + num)
-    override fun mul(num: Long) = Item(worryLevel * num)
+value class ItemWithValue(val worryLevel: Long) : Item {
+    override fun getRemainder(divisor: Divisor) = worryLevel % divisor
+    override fun add(num: Item) = num.add(worryLevel)
+    override fun add(num: Long): Item = ItemWithValue(worryLevel + num)
+    override fun mul(num: Item) = num.mul(worryLevel)
+    override fun mul(num: Long): Item = ItemWithValue(worryLevel * num)
 }
 
-@JvmInline
-value class ItemWithPrimes(private val worryLevelPrimes: List<Long>) : I {
-    override fun worryLevelDivisibleBy(divisor: Int): Boolean {
-        TODO("Not yet implemented")
+typealias Divisor = Int
+
+class ItemWithRemainder(private val num: Long, divisors: List<Divisor>) : Item {
+    private var remainders: MutableMap<Divisor, Long> = mutableMapOf()
+    init {
+        divisors.forEach {
+            remainders[it] = num % it
+        }
+    }
+    override fun getRemainder(divisor: Divisor) = remainders[divisor]!!
+
+    override fun add(num: Item): Item {
+        for ((divisor, remainder) in remainders) {
+            remainders[divisor] = (remainder + num.getRemainder(divisor)) % divisor
+        }
+        return this
     }
 
-    override fun worryLevel(): Long {
-        TODO("Not yet implemented")
+    override fun add(num: Long): Item {
+        for ((divisor, remainder) in remainders) {
+            remainders[divisor] = (remainder + num) % divisor
+        }
+        return this
     }
 
-    override fun add(num: Long): I {
-        TODO("Not yet implemented")
+    override fun mul(num: Item): Item {
+        for ((divisor, remainder) in remainders) {
+            remainders[divisor] = (remainder * num.getRemainder(divisor)) % divisor
+        }
+        return this
     }
 
-    override fun mul(num: Long): I {
-        TODO("Not yet implemented")
+    override fun mul(num: Long): Item {
+        for ((divisor, remainder) in remainders) {
+            remainders[divisor] = (remainder * num) % divisor
+        }
+        return this
     }
-
 }
+
 typealias MonkeyNumber = Int
 typealias Operation = String
 
-interface Me {
-    fun adjustWorryLevel(item: Item): Item
+interface Me<I> {
+    fun adjustWorryLevel(item: I): I
 }
 
-class RelievedMe : Me {
-    override fun adjustWorryLevel(item: Item): Item = Item(item.worryLevel() / 3)
+class RelievedMe : Me<ItemWithValue> {
+    override fun adjustWorryLevel(item: ItemWithValue): ItemWithValue = ItemWithValue(item.worryLevel / 3)
 }
 
-class NervousMe : Me {
-    override fun adjustWorryLevel(item: Item): Item = item
+class NervousMe : Me<ItemWithRemainder> {
+    override fun adjustWorryLevel(item: ItemWithRemainder): ItemWithRemainder = item
 }
 
 data class Monkey(
     val number: MonkeyNumber,
     private val operation: Operation,
-    private val divisor: Int,
+    private val divisor: Divisor,
     private val monkeyIfTrue: MonkeyNumber,
     private val monkeyIfFalse: MonkeyNumber,
     var items: MutableList<Item>,
     var inspections: Long = 0
 ) {
     fun decideWhereToThrow(item: Item): MonkeyNumber =
-        if (item.worryLevelDivisibleBy(divisor)) monkeyIfTrue else monkeyIfFalse
+        if (item.getRemainder(divisor) == 0L) monkeyIfTrue else monkeyIfFalse
 
-    fun inspectItemsAndWatch(me: Me): Monkey {
+    fun inspectItemsAndWatch(me: Me<Item>): Monkey {
         inspections += items.size
         items = items.map {
             it.inspectAndWatch(me)
@@ -71,19 +94,11 @@ data class Monkey(
         return this
     }
 
-    private fun Item.inspectAndWatch(me: Me): Item =
-        operation.split(" ").let { (left, operator, right) ->
-            Triple(
-                if (left == "old") worryLevel() else left.toLong(),
-                operator,
-                if (right == "old") worryLevel() else right.toLong()
-            ).let { (left, operator, right) ->
-                Item(
-                    when (operator) {
-                        "+" -> left + right
-                        else -> left * right
-                    }
-                )
+    private fun Item.inspectAndWatch(me: Me<Item>): Item =
+        operation.split(" ").let { (_, operator, right) ->
+            when (operator) {
+                "+" -> if (right == "old") this.add(this) else this.add(right.toLong())
+                else -> if (right == "old") this.mul(this) else this.mul(right.toLong())
             }
         }.let {
             me.adjustWorryLevel(it)
@@ -100,40 +115,34 @@ value class Monkeys(private val monkeys: MutableList<Monkey>) {
         }
     }
 
-    fun display() = monkeys.forEach { println(it) }
-    fun doNextRoundOfTaunting(me: Me) {
+    fun doNextRoundOfTaunting(me: Me<Item>) {
         monkeys.forEach { it.inspectItemsAndWatch(me).throwItems() }
     }
 
     private fun Monkey.throwItems() {
         items.forEach {
             monkeys[decideWhereToThrow(it)].items.add(it)
-            monkeys[number].items = emptyList<Item>().toMutableList()
-        }
-    }
-
-    companion object {
-        fun parse(input: List<String>): Monkeys {
-            val monkeys = input.chunked(7).map { monkey: List<String> ->
-                Monkey(
-                    number = monkey[0].takeLast(2).first().toString().toInt(),
-                    divisor = monkey[3].substringAfter("divisible by ").toInt(),
-                    items = monkey[1].substringAfter(": ").split(", ").map { Item(it.toLong()) }.toMutableList(),
-                    monkeyIfTrue = monkey[4].substringAfter("monkey ").toInt(),
-                    monkeyIfFalse = monkey[5].substringAfter("monkey ").toInt(),
-                    operation = monkey[2].substringAfter("new = ")
-                )
-
-            }.toMutableList()
-            return Monkeys(monkeys)
+            monkeys[number].items = emptyList<ItemWithValue>().toMutableList()
         }
     }
 }
 
 fun main() {
     fun part1(input: List<String>): Long {
-        val monkeys = Monkeys.parse(input)
-        val me = RelievedMe()
+        val monkeys = input.chunked(7).map { monkey: List<String> ->
+            Monkey(
+                number = monkey[0].takeLast(2).first().toString().toInt(),
+                divisor = monkey[3].substringAfter("divisible by ").toInt(),
+                items = monkey[1].substringAfter(": ").split(", ").map { ItemWithValue(it.toLong()) }.toMutableList(),
+                monkeyIfTrue = monkey[4].substringAfter("monkey ").toInt(),
+                monkeyIfFalse = monkey[5].substringAfter("monkey ").toInt(),
+                operation = monkey[2].substringAfter("new = ")
+            )
+
+        }.toMutableList().let {
+            Monkeys(it)
+        }
+        val me = RelievedMe() as Me<Item>
 
         repeat(20) {
             monkeys.doNextRoundOfTaunting(me)
@@ -142,13 +151,24 @@ fun main() {
     }
 
     fun part2(input: List<String>): Long {
-        val monkeys = Monkeys.parse(input)
-        val me = NervousMe()
+        val monkeys = input.chunked(7).map { monkey: List<String> ->
+            Monkey(
+                number = monkey[0].takeLast(2).first().toString().toInt(),
+                divisor = monkey[3].substringAfter("divisible by ").toInt(),
+                items = monkey[1].substringAfter(": ").split(", ").map { ItemWithRemainder(it.toLong(), listOf(17,3,19,7,2,5,11,13,23)) }.toMutableList(),
+                monkeyIfTrue = monkey[4].substringAfter("monkey ").toInt(),
+                monkeyIfFalse = monkey[5].substringAfter("monkey ").toInt(),
+                operation = monkey[2].substringAfter("new = ")
+            )
 
-        repeat(20) {
+        }.toMutableList().let {
+            Monkeys(it)
+        }
+        val me = NervousMe() as Me<Item>
+
+        repeat(10000) {
             monkeys.doNextRoundOfTaunting(me)
         }
-        monkeys.display()
         return monkeys.levelOfMonkeyBusiness()
     }
 
@@ -159,5 +179,5 @@ fun main() {
     check(part1(input).also { println(it) } == 99852L)
 
     check(part2(testInput).also { println(it) } == 2713310158L)
-    check(part2(input).also { println(it) } == TODO())
+    check(part2(input).also { println(it) } == 25935263541L)
 }
