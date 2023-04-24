@@ -1,139 +1,109 @@
 package day12
 
-import day12.Connection.Companion.connections
 import readInput
 import kotlin.system.measureTimeMillis
 
-interface Cave {
-    val name: String
+typealias Coordinates = Pair<Int, Int>
+typealias Terrain = Array<CharArray>
 
-    fun isStart() = name == "start"
-    fun isEnd() = name == "end"
+operator fun Coordinates.plus(other: Coordinates) = first + other.first to second + other.second
+
+class Map(val start: Coordinates, val destination: Coordinates, val terrain: Terrain) {
+    fun contains(coordinates: Coordinates) =
+        coordinates.first >= 0 &&
+                coordinates.second >= 0 &&
+                coordinates.first < terrain.size &&
+                coordinates.second < terrain.first().size
 }
 
-@JvmInline
-value class SmallCave(override val name: String) : Cave {
-    init {
-        assert(name.lowercase() == name)
+class Route(val map: Map) {
+    private val directions = listOf(-1 to 0, 1 to 0, 0 to -1, 0 to 1)
+
+    private fun Char.elevation() = when(this) {
+        'S' -> 'a'
+        'E' -> 'z'
+        else -> this
+    }.code
+    private fun Coordinates.isAccessibleFrom(other: Coordinates): Boolean {
+        val origin = map.terrain[other.first][other.second].elevation()
+        val target = map.terrain[first][second].elevation()
+        return target <= 1 + origin
     }
-}
 
-@JvmInline
-value class BigCave(override val name: String) : Cave {
-    init {
-        assert(name.uppercase() == name)
-    }
-}
-
-data class Connection(val from: Cave, val to: Cave) {
-    companion object {
-        fun connections(input: List<String>) = input.flatMap { connection ->
-            connection.split("-").map {
-                if (it.lowercase() == it) SmallCave(it) else BigCave(it)
-            }.let { (from, to) ->
-                listOf(
-                    Connection(from, to),
-                    Connection(to, from)
-                )
+    fun calculateRoute(): Int {
+        var routes: List<List<Coordinates>> = mutableListOf(mutableListOf(map.start))
+        while (routes.all { it.last() != map.destination }) {
+            routes = routes.flatMap { route ->
+                directions.map {
+                    it + route.last()
+                }.filter { next ->
+                    map.contains(next) && routes.none { it.contains(next) } && next.isAccessibleFrom(route.last())
+                }.map {
+                    val l = route.toMutableList()
+                    l.add(it)
+                    l
+                }
+            }.groupBy {
+                it.last()
+            }.map {
+                it.value.first()
             }
         }
+        return routes.first {
+            it.last() == map.destination
+        }.size - 1
     }
 }
 
-class Path(val caves: List<Cave>) {
-
-    private var smallCaveHasBeenVisitedTwice: Boolean = false
-
-    fun aSmallCaveHasBeenVisitedTwice(): Boolean {
-        if(!smallCaveHasBeenVisitedTwice) {
-            smallCaveHasBeenVisitedTwice = caves.filterIsInstance<SmallCave>().any { smallCave -> caves.count { it == smallCave } == 2}
+fun parse(input: List<String>): Map {
+    val rows = input.size
+    val columns = input[0].length
+    val landscape = Array(rows) { CharArray(columns) }
+    lateinit var start: Coordinates
+    lateinit var destination: Coordinates
+    input.forEachIndexed { row, line ->
+        line.forEachIndexed { column, char ->
+            landscape[row][column] = char
+            if (char == 'S') start = row to column
+            if (char == 'E') destination = row to column
         }
-        return smallCaveHasBeenVisitedTwice
     }
-
-
-    override fun toString() = caves.joinToString(",") { it.name }
+    return Map(start, destination, landscape)
 }
 
 fun main() {
     fun part1(input: List<String>): Int {
-        val network = connections(input)
-        val startConnection = network.filter { it.from.isStart() }
-        var paths = startConnection.map { Path(listOf(it.from, it.to)) }
-
-        while (paths.any { !it.caves.last().isEnd() }) {
-            paths = paths.flatMap { path ->
-                val lastCave = path.caves.last()
-                if (lastCave.isEnd()) {
-                    listOf(path)
-                } else {
-                    network.filter { it.from == lastCave && (it.to !is SmallCave || !path.caves.contains(it.to)) }.map {
-                        Path(path.caves.toMutableList() + it.to)
-                    }
-                }
-            }
-        }
-        return paths.size
+        val map = parse(input)
+        val route = Route(map)
+        return route.calculateRoute()
     }
 
     fun part2(input: List<String>): Int {
-        val network = connections(input)
-        val startConnection = network.filter { it.from.isStart() }
-        var paths = startConnection.map { Path(listOf(it.from, it.to)) }
-
-        while (paths.any { !it.caves.last().isEnd() }) {
-            paths = paths.flatMap { path ->
-                val lastCave = path.caves.last()
-                if (lastCave.isEnd()) {
-                    listOf(path)
-                } else {
-                    network.filter { it.from == lastCave }.mapNotNull {
-                        if (it.to is SmallCave && path.caves.contains(it.to) && path.aSmallCaveHasBeenVisitedTwice() || it.to.isStart()) {
-                            null
-                        } else {
-                            Path(path.caves.toMutableList() + it.to)
-                        }
-                    }
-                }
-            }
-        }
-        return paths.size
+        val map = parse(input)
+        val route = Route(map)
+        return route.calculateRoute()
     }
 
     val testInput = readInput("day12/Day12_test")
-    val testInput2 = readInput("day12/Day12_test_2")
-    val testInput3 = readInput("day12/Day12_test_3")
     val input = readInput("day12/Day12")
 
     println(part1(testInput))
-    check(part1(testInput) == 10)
-
-    println(part1(testInput2))
-    check(part1(testInput2) == 19)
-
-    println(part1(testInput3))
-    check(part1(testInput3) == 226)
+    check(part1(testInput) == 31)
 
     val solutionPart1: Int
     val msPart1 = measureTimeMillis {
         solutionPart1 = part1(input)
     }
     println("$solutionPart1 ($msPart1 ms)")
-    check(solutionPart1 == 4749)
+    check(solutionPart1 == 330)
 
     println(part2(testInput))
-    check(part2(testInput) == 36)
-
-    println(part2(testInput2))
-    check(part2(testInput2) == 103)
-
-    println(part2(testInput3))
-    check(part2(testInput3) == 3509)
+    check(part2(testInput) == 29)
 
     val solutionPart2: Int
     val msPart2 = measureTimeMillis {
         solutionPart2 = part2(input)
     }
     println("$solutionPart2 ($msPart2 ms)")
-    check(solutionPart2 == 123054)
+    check(solutionPart2 == TODO())
 }
