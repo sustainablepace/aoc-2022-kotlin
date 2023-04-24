@@ -16,28 +16,31 @@ class Map(val start: Coordinates, val destination: Coordinates, val terrain: Ter
                 coordinates.second < terrain.first().size
 }
 
-class Route(val map: Map) {
+abstract class Route(val map: Map) {
     private val directions = listOf(-1 to 0, 1 to 0, 0 to -1, 0 to 1)
 
-    private fun Char.elevation() = when(this) {
+    protected fun Char.elevation() = when (this) {
         'S' -> 'a'
         'E' -> 'z'
         else -> this
     }.code
+
     private fun Coordinates.isAccessibleFrom(other: Coordinates): Boolean {
         val origin = map.terrain[other.first][other.second].elevation()
         val target = map.terrain[first][second].elevation()
         return target <= 1 + origin
     }
 
-    fun calculateRoute(): Int {
-        var routes: List<List<Coordinates>> = mutableListOf(mutableListOf(map.start))
-        while (routes.all { it.last() != map.destination }) {
-            routes = routes.flatMap { route ->
+    abstract fun calculateRoute(): Int
+
+    fun calculateRoute(routes: List<List<Coordinates>>): Int {
+        var currentRoutes = routes
+        while (currentRoutes.all { it.last() != map.destination }) {
+            currentRoutes = currentRoutes.flatMap { route ->
                 directions.map {
                     it + route.last()
                 }.filter { next ->
-                    map.contains(next) && routes.none { it.contains(next) } && next.isAccessibleFrom(route.last())
+                    map.contains(next) && next.isAccessibleFrom(route.last())
                 }.map {
                     val l = route.toMutableList()
                     l.add(it)
@@ -49,9 +52,28 @@ class Route(val map: Map) {
                 it.value.first()
             }
         }
-        return routes.first {
+        return currentRoutes.first {
             it.last() == map.destination
         }.size - 1
+    }
+}
+
+class ScenicRoute(map: Map) : Route(map) {
+    override fun calculateRoute(): Int {
+        val valleys = map.terrain.flatMapIndexed { row: Int, line: CharArray ->
+            line.mapIndexed { column, char ->
+                if (char.elevation() == 'a'.code) {
+                    row to column
+                } else null
+            }
+        }.filterNotNull().map { listOf(it) }
+        return calculateRoute(valleys)
+    }
+}
+
+class StandardRoute(map: Map) : Route(map) {
+    override fun calculateRoute(): Int {
+        return calculateRoute(listOf(listOf(map.start)))
     }
 }
 
@@ -74,13 +96,13 @@ fun parse(input: List<String>): Map {
 fun main() {
     fun part1(input: List<String>): Int {
         val map = parse(input)
-        val route = Route(map)
+        val route = StandardRoute(map)
         return route.calculateRoute()
     }
 
     fun part2(input: List<String>): Int {
         val map = parse(input)
-        val route = Route(map)
+        val route = ScenicRoute(map)
         return route.calculateRoute()
     }
 
@@ -105,5 +127,5 @@ fun main() {
         solutionPart2 = part2(input)
     }
     println("$solutionPart2 ($msPart2 ms)")
-    check(solutionPart2 == TODO())
+    check(solutionPart2 == 321)
 }
