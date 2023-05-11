@@ -119,7 +119,6 @@ fun main() {
                 }
             }
             if (nextSand == entrance) {
-
                 break;
             }
         }
