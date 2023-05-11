@@ -1,7 +1,10 @@
 package day04
 
-import day22.intersect
 import readInput
+
+import kotlin.math.max
+import kotlin.math.min
+fun IntRange.intersect(r: IntRange): IntRange = max(first, r.first)..min(last, r.last)
 
 typealias CleanupAssignmentPair = Pair<IntRange, IntRange>
 
